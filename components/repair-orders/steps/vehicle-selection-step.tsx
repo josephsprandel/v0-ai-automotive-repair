@@ -57,7 +57,6 @@ type CreationMode = "select" | "manual" | "ai"
 interface UploadedImage {
   file: File
   preview: string
-  type: "front" | "rear" | "vin" | "dashboard" | "other"
 }
 
 export function VehicleSelectionStep({
@@ -89,18 +88,12 @@ export function VehicleSelectionStep({
     const newImages: UploadedImage[] = Array.from(files).map((file) => ({
       file,
       preview: URL.createObjectURL(file),
-      type: "other" as const,
     }))
 
     setUploadedImages((prev) => [...prev, ...newImages])
     setAnalysisComplete(false)
   }, [])
 
-  const handleImageTypeChange = (index: number, type: UploadedImage["type"]) => {
-    setUploadedImages((prev) =>
-      prev.map((img, i) => (i === index ? { ...img, type } : img))
-    )
-  }
 
   const removeImage = (index: number) => {
     setUploadedImages((prev) => {
@@ -348,17 +341,6 @@ export function VehicleSelectionStep({
                     >
                       <X size={14} />
                     </button>
-                    <select
-                      value={image.type}
-                      onChange={(e) => handleImageTypeChange(index, e.target.value as UploadedImage["type"])}
-                      className="mt-2 w-full text-xs px-2 py-1 rounded bg-muted border border-border text-foreground"
-                    >
-                      <option value="front">Front View</option>
-                      <option value="rear">Rear / License Plate</option>
-                      <option value="vin">VIN Plate</option>
-                      <option value="dashboard">Dashboard</option>
-                      <option value="other">Other</option>
-                    </select>
                   </div>
                 ))}
               </div>
