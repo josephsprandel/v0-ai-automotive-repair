@@ -20,6 +20,7 @@ import {
   ImageIcon,
 } from "lucide-react"
 import type { VehicleData } from "../ro-creation-wizard"
+import { decodeVIN } from "@/lib/vin-decoder"
 
 interface VehicleSelectionStepProps {
   customerId?: string
@@ -70,6 +71,7 @@ export function VehicleSelectionStep({
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
+  const [isDecodingVIN, setIsDecodingVIN] = useState(false)
   const [extractedData, setExtractedData] = useState<Partial<VehicleData>>({})
   const [manualData, setManualData] = useState<VehicleData>({
     year: "",
@@ -168,6 +170,12 @@ export function VehicleSelectionStep({
         setManualData((prev) => ({ ...prev, ...extracted }))
         setAnalysisComplete(true)
         console.log('Vehicle data extracted successfully')
+
+        // Auto-decode VIN if we have it
+        if (extracted.vin && extracted.vin.length === 17) {
+          console.log('VIN detected, auto-decoding...')
+          decodeAndFillVIN(extracted.vin)
+        }
       } else {
         throw new Error('No data extracted from images')
       }
@@ -195,6 +203,45 @@ export function VehicleSelectionStep({
       onSelectVehicle(updated)
     } else {
       onSelectVehicle(null)
+    }
+  }
+
+  const decodeAndFillVIN = async (vin: string) => {
+    if (!vin || vin.length !== 17) return
+
+    setIsDecodingVIN(true)
+    try {
+      console.log('[Vehicle Step] Decoding VIN:', vin)
+      const decoded = await decodeVIN(vin)
+
+      if (decoded.error) {
+        console.error('[Vehicle Step] VIN decode error:', decoded.error)
+        return
+      }
+
+      // Fill in missing fields from VIN decode
+      setManualData(prev => ({
+        ...prev,
+        year: prev.year || decoded.year || "",
+        make: prev.make || decoded.make || "",
+        model: prev.model || decoded.model || "",
+        trim: prev.trim || decoded.trim || ""
+      }))
+
+      // Update extracted data to show which fields came from VIN
+      setExtractedData(prev => ({
+        ...prev,
+        year: prev.year || decoded.year || "",
+        make: prev.make || decoded.make || "",
+        model: prev.model || decoded.model || "",
+        trim: prev.trim || decoded.trim || ""
+      }))
+
+      console.log('[Vehicle Step] VIN decoded successfully:', decoded)
+    } catch (error) {
+      console.error('[Vehicle Step] VIN decode failed:', error)
+    } finally {
+      setIsDecodingVIN(false)
     }
   }
 
@@ -412,12 +459,21 @@ export function VehicleSelectionStep({
             <Card className="p-5 border-border bg-green-500/5 border-green-500/20">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <Check size={16} className="text-green-600" />
+                  {isDecodingVIN ? (
+                    <Loader2 size={16} className="text-green-600 animate-spin" />
+                  ) : (
+                    <Check size={16} className="text-green-600" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground">Analysis Complete</h3>
+                  <h3 className="font-medium text-foreground">
+                    {isDecodingVIN ? 'Decoding VIN...' : 'Analysis Complete'}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    We extracted the following information. Please verify and edit if needed.
+                    {isDecodingVIN 
+                      ? 'Filling in vehicle details from VIN...'
+                      : 'We extracted the following information. Please verify and edit if needed.'
+                    }
                   </p>
                 </div>
               </div>
