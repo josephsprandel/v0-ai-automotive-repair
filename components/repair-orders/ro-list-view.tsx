@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Plus, Download, ChevronRight, Search, Loader2 } from "lucide-react"
-import { WorkOrderCreateWizard } from "./work-order-create-wizard"
 import { useRouter } from "next/navigation"
 
 interface WorkOrder {
@@ -39,7 +38,6 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showCreateWizard, setShowCreateWizard] = useState(false)
 
   const fetchWorkOrders = useCallback(async () => {
     setLoading(true)
@@ -78,10 +76,6 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
     return () => clearTimeout(debounce)
   }, [fetchWorkOrders])
 
-  const handleROCreated = (roNumber: string) => {
-    // Refresh the list
-    fetchWorkOrders()
-  }
 
   // Count work orders by state
   const getFilterCounts = () => {
@@ -163,7 +157,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
               <Download size={16} />
               Export
             </Button>
-            <Button size="sm" className="gap-2" onClick={() => setShowCreateWizard(true)}>
+            <Button size="sm" className="gap-2" onClick={() => router.push('/repair-orders/new')}>
               <Plus size={16} />
               New RO
             </Button>
@@ -282,7 +276,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
                 Clear search
               </Button>
             )}
-            <Button onClick={() => setShowCreateWizard(true)} variant="outline">
+            <Button onClick={() => router.push('/repair-orders/new')} variant="outline">
               <Plus size={16} className="mr-2" />
               Create First RO
             </Button>
@@ -290,12 +284,6 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
         )}
       </div>
 
-      {/* Create Wizard */}
-      <WorkOrderCreateWizard
-        open={showCreateWizard}
-        onOpenChange={setShowCreateWizard}
-        onSuccess={handleROCreated}
-      />
     </>
   )
 }
