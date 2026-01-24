@@ -222,7 +222,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
               <Card
                 key={wo.id}
                 className="p-5 border-border cursor-pointer hover:bg-muted/30 transition-colors group"
-                onClick={() => router.push(`/v0/repair-orders/${wo.id}`)}
+                onClick={() => router.push(`/repair-orders/${wo.id}`)}
               >
                 <div className="space-y-4">
                   {/* Header */}
