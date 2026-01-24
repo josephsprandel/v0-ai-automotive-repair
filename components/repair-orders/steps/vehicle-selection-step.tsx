@@ -57,6 +57,8 @@ type CreationMode = "select" | "manual" | "ai"
 interface UploadedImage {
   file: File
   preview: string
+  classification?: string
+  classifying?: boolean
 }
 
 export function VehicleSelectionStep({
@@ -112,6 +114,9 @@ export function VehicleSelectionStep({
       console.log('=== STARTING VEHICLE ANALYSIS ===')
       console.log('Number of images:', uploadedImages.length)
 
+      // Mark all images as classifying
+      setUploadedImages(prev => prev.map(img => ({ ...img, classifying: true })))
+
       // Create FormData with images
       const formData = new FormData()
       uploadedImages.forEach((img) => {
@@ -133,6 +138,15 @@ export function VehicleSelectionStep({
       console.log('Analysis result:', result)
 
       if (result.success && result.data) {
+        // Update images with classifications
+        if (result.classifications && result.classifications.length === uploadedImages.length) {
+          setUploadedImages(prev => prev.map((img, idx) => ({
+            ...img,
+            classifying: false,
+            classification: result.classifications[idx]
+          })))
+        }
+
         const extracted: Partial<VehicleData> = {
           year: result.data.year || "",
           make: result.data.make || "",
@@ -142,6 +156,12 @@ export function VehicleSelectionStep({
           licensePlate: result.data.licensePlate || "",
           color: result.data.color || "",
           mileage: result.data.mileage || "",
+        }
+
+        // Store additional data
+        if (result.data.build_date || result.data.tire_size) {
+          (extracted as any).build_date = result.data.build_date || "";
+          (extracted as any).tire_size = result.data.tire_size || "";
         }
 
         setExtractedData(extracted)
@@ -335,6 +355,24 @@ export function VehicleSelectionStep({
                         className="w-full h-full object-cover"
                       />
                     </div>
+                    {image.classifying && (
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <Badge variant="secondary" className="text-xs w-full justify-center">
+                          <Loader2 size={12} className="mr-1 animate-spin" />
+                          Classifying...
+                        </Badge>
+                      </div>
+                    )}
+                    {image.classification && !image.classifying && (
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <Badge 
+                          variant="default" 
+                          className="text-xs w-full justify-center bg-primary/90"
+                        >
+                          {String(image.classification).replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                    )}
                     <button
                       onClick={() => removeImage(index)}
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -390,24 +428,26 @@ export function VehicleSelectionStep({
                   { label: "Make", field: "make" as const, required: true },
                   { label: "Model", field: "model" as const, required: true },
                   { label: "Trim", field: "trim" as const, required: false },
-                  { label: "VIN", field: "vin" as const, required: true },
+                  { label: "VIN", field: "vin" as const, required: true, span: 2 },
                   { label: "License Plate", field: "licensePlate" as const, required: false },
                   { label: "Color", field: "color" as const, required: false },
                   { label: "Mileage", field: "mileage" as const, required: false },
-                ].map(({ label, field, required }) => (
-                  <div key={field}>
+                  { label: "Build Date", field: "build_date" as any, required: false },
+                  { label: "Tire Size", field: "tire_size" as any, required: false, span: 2 },
+                ].map(({ label, field, required, span }) => (
+                  <div key={field} className={span === 2 ? "col-span-2" : ""}>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {label} {required && "*"}
                     </label>
                     <Input
-                      value={manualData[field] || ""}
-                      onChange={(e) => handleManualChange(field, e.target.value)}
+                      value={(manualData as any)[field] || ""}
+                      onChange={(e) => handleManualChange(field as any, e.target.value)}
                       className={`bg-card border-border text-sm ${
-                        extractedData[field] ? "border-green-500/50" : ""
+                        (extractedData as any)[field] ? "border-green-500/50" : ""
                       }`}
                       placeholder={`Enter ${label.toLowerCase()}`}
                     />
-                    {extractedData[field] && (
+                    {(extractedData as any)[field] && (
                       <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
                         <Sparkles size={10} />
                         AI detected
