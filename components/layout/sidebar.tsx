@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { Menu, X, Wrench, LayoutDashboard, Users, MessageSquare, Settings, Zap, BarChart3 } from "lucide-react"
+import { Menu, X, Wrench, LayoutDashboard, Users, MessageSquare, Settings, Zap, BarChart3, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function Sidebar() {
@@ -12,6 +11,7 @@ export function Sidebar() {
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Wrench, label: "Repair Orders", href: "/repair-orders" },
     { icon: Users, label: "Customers", href: "/customers" },
+    { icon: Package, label: "Parts Manager", href: "/parts-manager" },
     { icon: MessageSquare, label: "Communications", href: "#" },
     { icon: BarChart3, label: "Analytics", href: "#" },
     { icon: Zap, label: "AI Assistant", href: "/ai-assistant", beta: true },
@@ -49,12 +49,14 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
           {navItems.map((item) => (
-            <Link
+            <a
               key={item.label}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium",
-                "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                item.active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <item.icon size={18} />
@@ -62,7 +64,7 @@ export function Sidebar() {
               {item.beta && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-sidebar-primary/20 text-sidebar-primary">β</span>
               )}
-            </Link>
+            </a>
           ))}
         </nav>
 

@@ -20,7 +20,6 @@ import {
   ImageIcon,
 } from "lucide-react"
 import type { VehicleData } from "../ro-creation-wizard"
-import { decodeVIN } from "@/lib/vin-decoder"
 
 interface VehicleSelectionStepProps {
   customerId?: string
@@ -58,8 +57,7 @@ type CreationMode = "select" | "manual" | "ai"
 interface UploadedImage {
   file: File
   preview: string
-  classification?: string
-  classifying?: boolean
+  type: "front" | "rear" | "vin" | "dashboard" | "other"
 }
 
 export function VehicleSelectionStep({
@@ -71,7 +69,6 @@ export function VehicleSelectionStep({
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
-  const [isDecodingVIN, setIsDecodingVIN] = useState(false)
   const [extractedData, setExtractedData] = useState<Partial<VehicleData>>({})
   const [manualData, setManualData] = useState<VehicleData>({
     year: "",
@@ -92,12 +89,18 @@ export function VehicleSelectionStep({
     const newImages: UploadedImage[] = Array.from(files).map((file) => ({
       file,
       preview: URL.createObjectURL(file),
+      type: "other" as const,
     }))
 
     setUploadedImages((prev) => [...prev, ...newImages])
     setAnalysisComplete(false)
   }, [])
 
+  const handleImageTypeChange = (index: number, type: UploadedImage["type"]) => {
+    setUploadedImages((prev) =>
+      prev.map((img, i) => (i === index ? { ...img, type } : img))
+    )
+  }
 
   const removeImage = (index: number) => {
     setUploadedImages((prev) => {
@@ -112,80 +115,25 @@ export function VehicleSelectionStep({
   const handleAnalyzeImages = async () => {
     setIsAnalyzing(true)
 
-    try {
-      console.log('=== STARTING VEHICLE ANALYSIS ===')
-      console.log('Number of images:', uploadedImages.length)
+    // Simulate AI analysis delay
+    await new Promise((resolve) => setTimeout(resolve, 2500))
 
-      // Mark all images as classifying
-      setUploadedImages(prev => prev.map(img => ({ ...img, classifying: true })))
-
-      // Create FormData with images
-      const formData = new FormData()
-      uploadedImages.forEach((img) => {
-        formData.append('images', img.file)
-      })
-
-      // Call the API
-      const response = await fetch('/v0/api/analyze-vehicle', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to analyze images')
-      }
-
-      const result = await response.json()
-      console.log('Analysis result:', result)
-
-      if (result.success && result.data) {
-        // Update images with classifications
-        if (result.classifications && result.classifications.length === uploadedImages.length) {
-          setUploadedImages(prev => prev.map((img, idx) => ({
-            ...img,
-            classifying: false,
-            classification: result.classifications[idx]
-          })))
-        }
-
-        const extracted: Partial<VehicleData> = {
-          year: result.data.year || "",
-          make: result.data.make || "",
-          model: result.data.model || "",
-          trim: result.data.trim || "",
-          vin: result.data.vin || "",
-          licensePlate: result.data.licensePlate || "",
-          color: result.data.color || "",
-          mileage: result.data.mileage || "",
-        }
-
-        // Store additional data
-        if (result.data.build_date || result.data.tire_size) {
-          (extracted as any).build_date = result.data.build_date || "";
-          (extracted as any).tire_size = result.data.tire_size || "";
-        }
-
-        setExtractedData(extracted)
-        setManualData((prev) => ({ ...prev, ...extracted }))
-        setAnalysisComplete(true)
-        console.log('Vehicle data extracted successfully')
-
-        // Auto-decode VIN if we have it
-        if (extracted.vin && extracted.vin.length === 17) {
-          console.log('VIN detected, auto-decoding...')
-          decodeAndFillVIN(extracted.vin)
-        }
-      } else {
-        throw new Error('No data extracted from images')
-      }
-    } catch (error: any) {
-      console.error('Analysis error:', error)
-      alert(`Failed to analyze images: ${error.message}`)
-    } finally {
-      setIsAnalyzing(false)
-      console.log('=================================')
+    // Simulated extracted data
+    const simulatedExtraction: Partial<VehicleData> = {
+      year: "2023",
+      make: "Ford",
+      model: "F-150",
+      trim: "Lariat",
+      vin: "1FTFW1E85NFA12345",
+      licensePlate: "CO-12345",
+      color: "Iconic Silver",
+      mileage: "",
     }
+
+    setExtractedData(simulatedExtraction)
+    setManualData((prev) => ({ ...prev, ...simulatedExtraction }))
+    setIsAnalyzing(false)
+    setAnalysisComplete(true)
   }
 
   const handleSelectExisting = (vehicle: typeof existingVehicles[0]) => {
@@ -203,45 +151,6 @@ export function VehicleSelectionStep({
       onSelectVehicle(updated)
     } else {
       onSelectVehicle(null)
-    }
-  }
-
-  const decodeAndFillVIN = async (vin: string) => {
-    if (!vin || vin.length !== 17) return
-
-    setIsDecodingVIN(true)
-    try {
-      console.log('[Vehicle Step] Decoding VIN:', vin)
-      const decoded = await decodeVIN(vin)
-
-      if (decoded.error) {
-        console.error('[Vehicle Step] VIN decode error:', decoded.error)
-        return
-      }
-
-      // Fill in missing fields from VIN decode
-      setManualData(prev => ({
-        ...prev,
-        year: prev.year || decoded.year || "",
-        make: prev.make || decoded.make || "",
-        model: prev.model || decoded.model || "",
-        trim: prev.trim || decoded.trim || ""
-      }))
-
-      // Update extracted data to show which fields came from VIN
-      setExtractedData(prev => ({
-        ...prev,
-        year: prev.year || decoded.year || "",
-        make: prev.make || decoded.make || "",
-        model: prev.model || decoded.model || "",
-        trim: prev.trim || decoded.trim || ""
-      }))
-
-      console.log('[Vehicle Step] VIN decoded successfully:', decoded)
-    } catch (error) {
-      console.error('[Vehicle Step] VIN decode failed:', error)
-    } finally {
-      setIsDecodingVIN(false)
     }
   }
 
@@ -402,30 +311,23 @@ export function VehicleSelectionStep({
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    {image.classifying && (
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <Badge variant="secondary" className="text-xs w-full justify-center">
-                          <Loader2 size={12} className="mr-1 animate-spin" />
-                          Classifying...
-                        </Badge>
-                      </div>
-                    )}
-                    {image.classification && !image.classifying && (
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <Badge 
-                          variant="default" 
-                          className="text-xs w-full justify-center bg-primary/90"
-                        >
-                          {String(image.classification).replace(/_/g, ' ')}
-                        </Badge>
-                      </div>
-                    )}
                     <button
                       onClick={() => removeImage(index)}
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={14} />
                     </button>
+                    <select
+                      value={image.type}
+                      onChange={(e) => handleImageTypeChange(index, e.target.value as UploadedImage["type"])}
+                      className="mt-2 w-full text-xs px-2 py-1 rounded bg-muted border border-border text-foreground"
+                    >
+                      <option value="front">Front View</option>
+                      <option value="rear">Rear / License Plate</option>
+                      <option value="vin">VIN Plate</option>
+                      <option value="dashboard">Dashboard</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
                 ))}
               </div>
@@ -459,21 +361,12 @@ export function VehicleSelectionStep({
             <Card className="p-5 border-border bg-green-500/5 border-green-500/20">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  {isDecodingVIN ? (
-                    <Loader2 size={16} className="text-green-600 animate-spin" />
-                  ) : (
-                    <Check size={16} className="text-green-600" />
-                  )}
+                  <Check size={16} className="text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground">
-                    {isDecodingVIN ? 'Decoding VIN...' : 'Analysis Complete'}
-                  </h3>
+                  <h3 className="font-medium text-foreground">Analysis Complete</h3>
                   <p className="text-sm text-muted-foreground">
-                    {isDecodingVIN 
-                      ? 'Filling in vehicle details from VIN...'
-                      : 'We extracted the following information. Please verify and edit if needed.'
-                    }
+                    We extracted the following information. Please verify and edit if needed.
                   </p>
                 </div>
               </div>
@@ -484,26 +377,24 @@ export function VehicleSelectionStep({
                   { label: "Make", field: "make" as const, required: true },
                   { label: "Model", field: "model" as const, required: true },
                   { label: "Trim", field: "trim" as const, required: false },
-                  { label: "VIN", field: "vin" as const, required: true, span: 2 },
+                  { label: "VIN", field: "vin" as const, required: true },
                   { label: "License Plate", field: "licensePlate" as const, required: false },
                   { label: "Color", field: "color" as const, required: false },
                   { label: "Mileage", field: "mileage" as const, required: false },
-                  { label: "Build Date", field: "build_date" as any, required: false },
-                  { label: "Tire Size", field: "tire_size" as any, required: false, span: 2 },
-                ].map(({ label, field, required, span }) => (
-                  <div key={field} className={span === 2 ? "col-span-2" : ""}>
+                ].map(({ label, field, required }) => (
+                  <div key={field}>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
                       {label} {required && "*"}
                     </label>
                     <Input
-                      value={(manualData as any)[field] || ""}
-                      onChange={(e) => handleManualChange(field as any, e.target.value)}
+                      value={manualData[field] || ""}
+                      onChange={(e) => handleManualChange(field, e.target.value)}
                       className={`bg-card border-border text-sm ${
-                        (extractedData as any)[field] ? "border-green-500/50" : ""
+                        extractedData[field] ? "border-green-500/50" : ""
                       }`}
                       placeholder={`Enter ${label.toLowerCase()}`}
                     />
-                    {(extractedData as any)[field] && (
+                    {extractedData[field] && (
                       <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
                         <Sparkles size={10} />
                         AI detected
