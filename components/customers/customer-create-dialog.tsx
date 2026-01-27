@@ -42,7 +42,7 @@ export function CustomerCreateDialog({ open, onOpenChange, onSuccess }: Customer
     setError(null)
 
     try {
-      const response = await fetch("/v0/api/customers", {
+      const response = await fetch("/api/customers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

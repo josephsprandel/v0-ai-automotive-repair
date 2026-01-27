@@ -37,7 +37,7 @@ export function CustomerProfile({ customerId, onClose }: { customerId: string; o
       setError(null)
       
       try {
-        const response = await fetch(`/v0/api/customers/${customerId}`)
+        const response = await fetch(`/api/customers/${customerId}`)
         if (!response.ok) {
           throw new Error("Failed to load customer")
         }

@@ -38,7 +38,7 @@ export function VehicleManagement({ customerId }: { customerId: string }) {
     setError(null)
     
     try {
-      const response = await fetch(`/v0/api/vehicles?customer_id=${customerId}`)
+      const response = await fetch(`/api/vehicles?customer_id=${customerId}`)
       if (!response.ok) {
         throw new Error("Failed to fetch vehicles")
       }

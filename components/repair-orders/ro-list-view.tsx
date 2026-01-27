@@ -54,7 +54,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
         params.set("search", searchTerm)
       }
 
-      const response = await fetch(`/v0/api/work-orders?${params}`)
+      const response = await fetch(`/api/work-orders?${params}`)
       if (!response.ok) {
         throw new Error("Failed to fetch work orders")
       }

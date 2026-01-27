@@ -1,0 +1,41 @@
+[
+  {
+    "vehicle": "2020 Honda Accord",
+    "filename": "2020_honda_accord.pdf",
+    "success": true,
+    "duration": 55,
+    "counts": {
+      "fluids": 10,
+      "maintenance": 4,
+      "tires": 2,
+      "torque": 2,
+      "total": 18
+    }
+  },
+  {
+    "vehicle": "2020 Volvo Xc60 T8 2020 Xc60 T8 Owner's Manual",
+    "filename": "2020_volvo_xc60 t8_2020 XC60 T8 Owner's Manual.pdf",
+    "success": true,
+    "duration": 38.6,
+    "counts": {
+      "fluids": 6,
+      "maintenance": 3,
+      "tires": 3,
+      "torque": 2,
+      "total": 14
+    }
+  },
+  {
+    "vehicle": "2020 BMW Owner's+manual 01402959722",
+    "filename": "BMW_Owner's+Manual_01402959722.pdf",
+    "success": true,
+    "duration": 37.7,
+    "counts": {
+      "fluids": 5,
+      "maintenance": 3,
+      "tires": 4,
+      "torque": 1,
+      "total": 13
+    }
+  }
+]

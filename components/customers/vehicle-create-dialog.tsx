@@ -56,7 +56,7 @@ export function VehicleCreateDialog({ open, onOpenChange, onSuccess, customerId 
         notes: formData.notes || null,
       }
 
-      const response = await fetch("/v0/api/vehicles", {
+      const response = await fetch("/api/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

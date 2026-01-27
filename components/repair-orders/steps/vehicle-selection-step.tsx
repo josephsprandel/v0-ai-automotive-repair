@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,8 @@ import {
   X,
   AlertCircle,
   ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import type { VehicleData } from "../ro-creation-wizard"
 import { decodeVIN } from "@/lib/vin-decoder"
@@ -73,6 +75,8 @@ export function VehicleSelectionStep({
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [isDecodingVIN, setIsDecodingVIN] = useState(false)
   const [extractedData, setExtractedData] = useState<Partial<VehicleData>>({})
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const [manualData, setManualData] = useState<VehicleData>({
     year: "",
     make: "",
@@ -109,6 +113,23 @@ export function VehicleSelectionStep({
     setAnalysisComplete(false)
   }
 
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = () => {
+    setLightboxOpen(false)
+  }
+
+  const nextImage = () => {
+    setLightboxIndex((prev) => (prev + 1) % uploadedImages.length)
+  }
+
+  const prevImage = () => {
+    setLightboxIndex((prev) => (prev - 1 + uploadedImages.length) % uploadedImages.length)
+  }
+
   const handleAnalyzeImages = async () => {
     setIsAnalyzing(true)
 
@@ -126,7 +147,7 @@ export function VehicleSelectionStep({
       })
 
       // Call the API
-      const response = await fetch('/v0/api/analyze-vehicle', {
+      const response = await fetch('/api/analyze-vehicle', {
         method: 'POST',
         body: formData,
       })
@@ -250,6 +271,20 @@ export function VehicleSelectionStep({
       onSelectVehicle(manualData)
     }
   }
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') nextImage()
+      else if (e.key === 'ArrowLeft') prevImage()
+      else if (e.key === 'Escape') closeLightbox()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, lightboxIndex, uploadedImages.length])
 
   return (
     <div className="space-y-6">
@@ -395,7 +430,10 @@ export function VehicleSelectionStep({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {uploadedImages.map((image, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-video rounded-lg overflow-hidden bg-muted border border-border">
+                    <div 
+                      className="aspect-video rounded-lg overflow-hidden bg-muted border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                      onClick={() => openLightbox(index)}
+                    >
                       <img
                         src={image.preview || "/placeholder.svg"}
                         alt={`Upload ${index + 1}`}
@@ -421,8 +459,11 @@ export function VehicleSelectionStep({
                       </div>
                     )}
                     <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeImage(index)
+                      }}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     >
                       <X size={14} />
                     </button>
@@ -567,6 +608,77 @@ export function VehicleSelectionStep({
             ))}
           </div>
         </Card>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && uploadedImages.length > 0 && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+          >
+            <X size={24} className="text-white" />
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-white text-sm">
+            {lightboxIndex + 1} / {uploadedImages.length}
+          </div>
+
+          {/* Previous button */}
+          {uploadedImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                prevImage()
+              }}
+              className="absolute left-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <ChevronLeft size={28} className="text-white" />
+            </button>
+          )}
+
+          {/* Image */}
+          <div 
+            className="max-w-7xl max-h-[90vh] p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={uploadedImages[lightboxIndex]?.preview || "/placeholder.svg"}
+              alt={`Photo ${lightboxIndex + 1}`}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            {uploadedImages[lightboxIndex]?.classification && (
+              <div className="mt-4 flex justify-center">
+                <Badge variant="default" className="bg-primary/90 text-sm px-4 py-2">
+                  {String(uploadedImages[lightboxIndex].classification).replace(/_/g, ' ')}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Next button */}
+          {uploadedImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                nextImage()
+              }}
+              className="absolute right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <ChevronRight size={28} className="text-white" />
+            </button>
+          )}
+
+          {/* Keyboard hint */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-white text-xs">
+            Use arrow keys to navigate • ESC to close
+          </div>
+        </div>
       )}
     </div>
   )

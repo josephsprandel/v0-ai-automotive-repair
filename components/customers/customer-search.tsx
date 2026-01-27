@@ -45,7 +45,7 @@ export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: s
         params.set("search", searchTerm)
       }
 
-      const response = await fetch(`/v0/api/customers?${params}`)
+      const response = await fetch(`/api/customers?${params}`)
       if (!response.ok) {
         throw new Error("Failed to fetch customers")
       }

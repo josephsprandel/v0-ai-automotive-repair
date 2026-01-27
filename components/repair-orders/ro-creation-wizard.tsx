@@ -113,7 +113,7 @@ export function ROCreationWizard() {
       let customerId = customerData.id
       if (customerData.isNew) {
         console.log("[RO Wizard] Creating new customer...")
-        const customerResponse = await fetch('/v0/api/customers', {
+        const customerResponse = await fetch('/api/customers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -137,7 +137,7 @@ export function ROCreationWizard() {
       let vehicleId = vehicleData.id
       if (vehicleData.isNew) {
         console.log("[RO Wizard] Creating new vehicle...")
-        const vehicleResponse = await fetch('/v0/api/vehicles', {
+        const vehicleResponse = await fetch('/api/vehicles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -164,7 +164,7 @@ export function ROCreationWizard() {
 
       // Step 3: Create work order
       console.log("[RO Wizard] Creating work order...")
-      const woResponse = await fetch('/v0/api/work-orders', {
+      const woResponse = await fetch('/api/work-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

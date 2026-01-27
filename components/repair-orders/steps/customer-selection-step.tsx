@@ -41,7 +41,7 @@ export function CustomerSelectionStep({ selectedCustomer, onSelectCustomer }: Cu
         params.set("search", search)
       }
       
-      const response = await fetch(`/v0/api/customers?${params}`)
+      const response = await fetch(`/api/customers?${params}`)
       if (!response.ok) throw new Error("Failed to fetch customers")
       
       const data = await response.json()

@@ -71,7 +71,7 @@ export function WorkOrderCreateWizard({ open, onOpenChange, onSuccess }: WorkOrd
         const params = new URLSearchParams({ limit: "20" })
         if (customerSearch) params.set("search", customerSearch)
 
-        const response = await fetch(`/v0/api/customers?${params}`)
+        const response = await fetch(`/api/customers?${params}`)
         const data = await response.json()
         setCustomers(data.customers || [])
       } catch (err) {
@@ -91,7 +91,7 @@ export function WorkOrderCreateWizard({ open, onOpenChange, onSuccess }: WorkOrd
     const fetchVehicles = async () => {
       setLoadingVehicles(true)
       try {
-        const response = await fetch(`/v0/api/vehicles?customer_id=${selectedCustomer.id}`)
+        const response = await fetch(`/api/vehicles?customer_id=${selectedCustomer.id}`)
         const data = await response.json()
         setVehicles(data.vehicles || [])
       } catch (err) {
@@ -112,7 +112,7 @@ export function WorkOrderCreateWizard({ open, onOpenChange, onSuccess }: WorkOrd
   const handleVehicleCreated = () => {
     // Refresh vehicle list
     if (selectedCustomer) {
-      fetch(`/v0/api/vehicles?customer_id=${selectedCustomer.id}`)
+      fetch(`/api/vehicles?customer_id=${selectedCustomer.id}`)
         .then(res => res.json())
         .then(data => setVehicles(data.vehicles || []))
     }
@@ -150,7 +150,7 @@ export function WorkOrderCreateWizard({ open, onOpenChange, onSuccess }: WorkOrd
         notes: roDetails.notes || null,
       }
 
-      const response = await fetch("/v0/api/work-orders", {
+      const response = await fetch("/api/work-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
