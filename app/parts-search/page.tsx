@@ -67,6 +67,21 @@ export default function PartsSearchPage() {
     console.log(`[PartsTech] ${message}`);
   };
 
+  // Map vendor names to logo filenames
+  const getVendorLogo = (vendorName: string): string | null => {
+    const logoMap: Record<string, string> = {
+      'SSF Auto Parts': '/vendor-logos/ssf-auto-parts.png',
+      'O\'Reilly Auto Parts': '/vendor-logos/oreilly-auto-parts.png',
+      'AutoZone': '/vendor-logos/autozone.png',
+      'Crow-Burlingame': '/vendor-logos/crow-burlingame.png',
+      'NAPA Auto Parts': '/vendor-logos/napa-auto-parts.png',
+      'Tri-State Enterprises': '/vendor-logos/tri-state-enterprises.png',
+      'WorldPac': '/vendor-logos/worldpac.png',
+      'PartsTech Catalog': '/vendor-logos/partstech-catalog.png',
+    };
+    return logoMap[vendorName] || null;
+  };
+
   const handleSearch = async () => {
     setError('');
     setLoading(true);
@@ -349,9 +364,25 @@ export default function PartsSearchPage() {
             <Card key={vendorIndex}>
               <CardHeader className="bg-slate-50 dark:bg-slate-900">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{vendor.vendor}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{vendor.vendor_location}</p>
+                  <div className="flex items-center gap-4">
+                    {/* Vendor Logo */}
+                    {getVendorLogo(vendor.vendor) && (
+                      <div className="w-24 h-12 flex items-center justify-center bg-white rounded p-2">
+                        <img
+                          src={getVendorLogo(vendor.vendor)!}
+                          alt={`${vendor.vendor} logo`}
+                          className="max-w-full max-h-full object-contain"
+                          onError={(e) => {
+                            // Hide if logo fails to load
+                            e.currentTarget.parentElement!.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <CardTitle className="text-lg">{vendor.vendor}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{vendor.vendor_location}</p>
+                    </div>
                   </div>
                   <Badge variant="secondary">
                     <Package className="mr-1 h-3 w-3" />
