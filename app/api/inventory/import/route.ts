@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
     
     console.log(`[Inventory Import] Parsed ${records.length} records`);
     
+    // DEBUG: Log first record's column names
+    if (records.length > 0) {
+      console.log('[Inventory Import] CSV Column Names:', Object.keys(records[0]));
+      console.log('[Inventory Import] First Record Sample:', records[0]);
+    }
+    
     // Begin transaction
     await client.query('BEGIN');
     
@@ -70,20 +76,20 @@ export async function POST(request: NextRequest) {
     
     for (const record of records) {
       try {
-        // Get part number (required field)
-        const partNumber = record.part_number || record['Part Number'] || record['PartNumber'];
+        // Get part number (required field) - ShopWare uses "Number"
+        const partNumber = (record as any).Number || (record as any).part_number || (record as any)['Part Number'] || (record as any)['PartNumber'];
         
         if (!partNumber || partNumber.trim().length === 0) {
           skipped++;
           continue; // Skip records without part number
         }
         
-        // Parse numeric fields with defaults
-        const cost = parseFloat(record.cost || record['Cost'] || '0');
-        const price = parseFloat(record.price || record['Price'] || '0');
-        const qtyOnHand = parseInt(record.quantity_on_hand || record['Qty On Hand'] || record['QtyOnHand'] || '0');
-        const qtyAvailable = parseInt(record.quantity_available || record['Qty Available'] || record['QtyAvailable'] || qtyOnHand.toString());
-        const reorderPoint = parseInt(record.reorder_point || record['Reorder Point'] || record['ReorderPoint'] || '0');
+        // Parse numeric fields with defaults - ShopWare column names
+        const cost = parseFloat((record as any).Cost || '0');
+        const price = parseFloat((record as any).MSRP || (record as any).Price || '0');
+        const qtyOnHand = parseFloat((record as any)['Quantity On Hand'] || '0');
+        const qtyAvailable = qtyOnHand; // ShopWare doesn't separate on-hand vs available
+        const reorderPoint = parseInt((record as any)['Min Stock'] || '0');
         
         // UPSERT: Insert new or update existing
         const result = await client.query(`
@@ -121,18 +127,18 @@ export async function POST(request: NextRequest) {
           RETURNING (xmax = 0) AS inserted
         `, [
           partNumber.trim(),
-          record.description || record['Description'] || '',
-          record.vendor || record['Vendor'] || 'AutoHouse',
+          (record as any).Description || '',
+          (record as any)['Primary Vendor'] || (record as any).Manufacturer || (record as any).Brand || 'AutoHouse',
           cost,
           price,
           qtyOnHand,
           qtyAvailable,
           reorderPoint,
-          record.location || record['Location'] || '',
-          record.bin_location || record['Bin'] || record['Bin Location'] || '',
-          record.category || record['Category'] || 'General',
-          record.notes || record['Notes'] || '',
-          record.shopware_id || record['ShopWare ID'] || record['ID'] || ''
+          (record as any).Location || '',
+          '', // ShopWare doesn't have bin_location
+          (record as any)['Reporting Category'] || (record as any)['Part Type'] || 'General',
+          (record as any)['Misc Info'] || '',
+          (record as any)['Inventory ID'] || ''
         ]);
         
         // Check if it was an insert or update
