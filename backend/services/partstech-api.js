@@ -480,39 +480,58 @@ async function searchVendorParts(accountId, vehicleId, vin, partTypeIds, cookies
       return [];
     }
 
-    return data.products.products.map(p => ({
-      // Part identification
-      part_number: p.partNumber,
-      part_number_id: p.partNumberId,
-      brand: p.brand?.name || 'Unknown',
-      description: p.title,
+    return data.products.products.map(p => {
+      // PartsTech availability can be an object or array - handle both
+      let availability = p.availability;
+      let quantity = 0;
+      let locationName = null;
+      let locationAddress = null;
       
-      // Pricing
-      price: p.price,
-      list_price: p.listPrice,
-      customer_price: p.customerPrice,
-      retail_price: p.listPrice, // Use list price as retail
-      core_charge: p.coreCharge,
+      if (availability) {
+        // If it's an array, get first item
+        if (Array.isArray(availability) && availability.length > 0) {
+          availability = availability[0];
+        }
+        
+        quantity = availability.quantity || 0;
+        locationName = availability.name;
+        locationAddress = availability.address;
+      }
       
-      // Availability
-      stock_status: p.availability?.quantity > 0 
-        ? `In Stock (${p.availability.quantity})` 
-        : 'Not Available',
-      store_location: p.availability?.name 
-        ? `${p.availability.name}${p.availability.address ? ' - ' + p.availability.address : ''}`
-        : null,
-      quantity_available: p.availability?.quantity || 0,
-      availability_type: p.availability?.type,
-      
-      // Additional info
-      stocked: p.stocked,
-      sponsor_type: p.sponsorType,
-      attributes: p.attributes || [],
-      images: p.images || [],
-      
-      // Vendor info
-      vendor_account_id: accountId
-    }));
+      return {
+        // Part identification
+        part_number: p.partNumber,
+        part_number_id: p.partNumberId,
+        brand: p.brand?.name || 'Unknown',
+        description: p.title,
+        
+        // Pricing
+        price: p.price,
+        list_price: p.listPrice,
+        customer_price: p.customerPrice,
+        retail_price: p.listPrice, // Use list price as retail
+        core_charge: p.coreCharge,
+        
+        // Availability
+        stock_status: quantity > 0 
+          ? `In Stock (${quantity})` 
+          : 'Not Available',
+        store_location: locationName 
+          ? `${locationName}${locationAddress ? ' - ' + locationAddress : ''}`
+          : null,
+        quantity_available: quantity,
+        availability_type: availability?.type,
+        
+        // Additional info
+        stocked: p.stocked,
+        sponsor_type: p.sponsorType,
+        attributes: p.attributes || [],
+        images: p.images || [],
+        
+        // Vendor info
+        vendor_account_id: accountId
+      };
+    });
 
   } catch (error) {
     // Log vendor error but don't fail entire search
