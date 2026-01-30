@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Package, AlertTriangle, ShoppingCart, Truck, Users, RotateCcw, Plus, Search, Filter } from "lucide-react"
+import { Package, AlertTriangle, ShoppingCart, Truck, Users, RotateCcw, Plus, Search, Filter, ExternalLink } from "lucide-react"
 import { PartsInventoryTab } from "./tabs/parts-inventory-tab"
 import { PurchaseOrdersTab } from "./tabs/purchase-orders-tab"
 import { ReceivingTab } from "./tabs/receiving-tab"
 import { VendorManagementTab } from "./tabs/vendor-management-tab"
 import { CoresTrackingTab } from "./tabs/cores-tracking-tab"
+import Link from "next/link"
 
 export function PartsManagerDashboard() {
   const [activeTab, setActiveTab] = useState("inventory")
@@ -24,10 +25,19 @@ export function PartsManagerDashboard() {
           <h1 className="text-3xl font-bold text-foreground">Parts Manager</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage inventory, orders, vendors, and cores</p>
         </div>
-        <Button size="lg" className="gap-2">
-          <Plus size={18} />
-          New Part
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/parts-search">
+            <Button size="lg" variant="outline" className="gap-2">
+              <Search size={18} />
+              PartsTech Search
+              <ExternalLink size={14} className="opacity-50" />
+            </Button>
+          </Link>
+          <Button size="lg" className="gap-2">
+            <Plus size={18} />
+            New Part
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}

@@ -1,0 +1,3708 @@
+document:
+  title: "WHI Solutions Nexlink SDK Interface Specification for Nexpart (Version 4.61, 3/17/2025)"
+  source_pdf: "Nexlink4.61_compressed.pdf"
+  extracted_at: "2026-01-27T05:49:07.040247Z"
+  pages:
+    - page: 1
+      text: |-
+        3/17/2025 
+         
+         
+        Current Version: 4.61 
+        WHI 
+        SOLUTIONS, 
+        INC 
+        SDK INTERFACE SPECIFICATION (NEXLINK) 
+        FOR NEXPART 
+        FUNCTIONAL IMPLEMENTATION GUIDE
+    - page: 2
+      text: |-
+        Revision History 
+         
+        Revision Revision Date Revision Description 
+        4.0 04/13/2016 Rewritten entire specification 
+        4.01 01/02/2017 Added WebPostBtnLabel to Launch Request 
+        Added Section 7 - Best Practices 
+        4.02 04/04/2017 Added Section 7.2 - Browser Recommendation (Google Chrome) 
+        4.03 05/16/2017 Updated Identifier field from optional to required. 
+        4.04 03/13/2018 Updated Examples and syntax corrections. 
+        4.05 05/14/2018 Added SmartpageURL to Part for Cart / Added Buyer’s Guide Example / 
+        Updated Screenshots 
+        4.10 10/15/2018 Added Smart Page API Call 
+        4.15 03/12/2019 Added PONumber to Request 
+        4.16 01/15/2020 Specification Cleanup 
+        4.17 03/13/2020 Specification Cleanup. Changed BranchCart Id field to optional 
+        4.50 10/10/2020 Added SourceIT and Multi-Seller Support for Nexlink 
+         Added to Launch: JumpTab->ordercart 
+         Added to Launch: JumpTab->ordercart->Parts->Part->Price 
+         Added to Launch: JumpTab->ordercart->Parts->Part->BranchId 
+         Changed to Required (Cart/Order Response): Cart -> BranchCart 
+         Added to Cart/Order Response: Cart -> BranchCart -> VendorUsername 
+        4.51 02/2/2021 Updated Screenshots 
+        4.52 03/9/2021 Added EmbeddedBrowser Tag 
+        4.55 06/3/2021 Added Mobile in Launch Request 
+        Added CustType for NCC Launch Request 
+        4.56 08/24/2021 Added LineCode to Interchange and Buyer’s Guide Request. 
+        4.57 04/20/2022 Clarified the LiveCart option is DMS only and Mobile usage 
+        4.572 12/1/2022 Added Catalog Footnotes, WebPostURL Basic Authentication and HTTPS 
+        Required. 
+        Added BuyerId for NCC Integrations 
+        4.58 2/9/2024 Added ItemType for Parts - Part, Tire & Recycled. Added Tire Details 
+        4.59 10/2/2024 Added HideSpecialOrder for NCC Integrations 
+        Added PONumber per part in ordercart. 
+        4.60 1/7/2025 Added WebPostPlaceOrdURL & WebPostPlaceOrdBtnLabel for automatically 
+        pushing order confirmation details. 
+        4.61 3/17/2025 Updated SellerPartDesc for ordercart to be required. 
+         
+        Legal Notices 
+        This document and the information contained therein belong to the WHI Solutions, Inc (WHI) and may not be 
+        disclosed or duplicated, in whole or in part, without prior permission from WHI. Other product names or standards 
+        that are mentioned in this document may be trademarks or registered trademarks of their respective companies and 
+        are hereby acknowledged.
+    - page: 3
+      text: |-
+        Under the copyright laws, neither the documentation nor the software may be copied, photocopied, reproduced, 
+        translated, or reduced to any electronic medium or machine-readable form, in whole or in part, without the prior 
+        written consent of WHI Solutions, Inc., except in the manner described in this document. 
+         
+        © Copyright 2004-2025 WHI Solutions, Inc.
+         WHI Solutions, Inc. 
+         Suite 210 
+         5 International Drive 
+         Rye Brook, NY 10573 USA 
+         Tel: +1 (914) 697 9417 
+         Email: support@whisolutions.com 
+         
+        All rights reserved. Printed in the United States. 
+        WHI Solutions, Inc. 
+         
+        No investigation has been made of common-law trademark rights in any word. Words that are known to have 
+        current registrations are shown with an initial capital. The inclusion or exclusion of any word or its capitalization is 
+        not an expression of the publisher’s opinion as to whether or not it is subject to any proprietary rights, nor is it to 
+        be regarded as affecting the validity of any trademark.
+    - page: 4
+      text: |-
+        Table of Contents 
+        1. Introduction .................................................................................................................................................... 7 
+        1.1 Purpose of this document .................................................................................................................... 7 
+        1.2 Scope .................................................................................................................................................... 7 
+        2. Process Overview............................................................................................................................................ 8 
+        2.2 Document Exchange ............................................................................................................................. 8 
+        2.3 Required Elements................................................................................................................................ 8 
+        3. Integration ...................................................................................................................................................... 9 
+        3.1 URL Specifications ................................................................................................................................. 9 
+        4. Launch (Login) ................................................................................................................................................. 9 
+        4.1 Launch / Request / Details .................................................................................................................... 9 
+        4.2 Launch / Response / Details ............................................................................................................... 18 
+        4.3 Launch / Request / XML...................................................................................................................... 20 
+        4.4. Launch / Response / XML .................................................................................................................. 24 
+        4.5. Launch / Request / JSON ................................................................................................................... 24 
+        4.6. Launch / Response / JSON ................................................................................................................. 29 
+        4.7. Launch / Examples / Login ................................................................................................................. 30 
+        4.8. Launch / Examples / Stock Check Part(s) ........................................................................................... 32 
+        4.9. Launch / Examples / Order Part (s) .................................................................................................... 34 
+        4.10. Launch / Examples / Select Catalog Vehicle & Usg.......................................................................... 36 
+        4.11. Launch / Examples / Select Catalog Vehicle & ACES Part Type ....................................................... 38 
+        4.12. Launch / Examples / Keyword (Smart Search) Lookup .................................................................... 40 
+        4.13. Launch / Examples / Jump to Interchange Tab ............................................................................... 42 
+        4.14. Launch / Examples / Jump to Buyer’s Guide Tab ............................................................................ 44 
+        5. Cart or Order ................................................................................................................................................. 46 
+        5.1 Cart or Order / Request / Details ........................................................................................................ 46
+    - page: 5
+      text: |-
+        5.2 Cart or Order / Response / Details ..................................................................................................... 47 
+        5.3 Cart or Order / Request / XML ............................................................................................................ 58 
+        5.4 Cart or Order / Response / XML ......................................................................................................... 58 
+        5.5 Cart or Order / Request / JSON .......................................................................................................... 65 
+        5.6 Cart or Order / Response / JSON ........................................................................................................ 65 
+        5.7 Cart / Examples / Parts ....................................................................................................................... 72 
+        5.8 Cart / Examples / Parts, Labor & Specifications (optional)................................................................. 75 
+        5.9 Order / Examples / Order Confirmation ............................................................................................. 79 
+        5.10 Order / Examples / Live Cart ............................................................................................................. 83 
+        6. Smart Page .................................................................................................................................................... 86 
+        6.1 SmartPage / Request / Details ............................................................................................................ 86 
+        6.2 SmartPage / Response / Details ......................................................................................................... 87 
+        6.3 SmartPage / Request / XML ................................................................................................................ 89 
+        6.4. SmartPage / Response / XML ............................................................................................................ 90 
+        6.5 SmartPage / Request / JSON .............................................................................................................. 91 
+        6.7. SmartPage / Response / JSON ........................................................................................................... 92 
+        7. Logout ........................................................................................................................................................... 93 
+        7.1 Logout / Request / Details .................................................................................................................. 93 
+        7.2 Logout / Response / Details ................................................................................................................ 94 
+        7.3 Logout / Request / XML ...................................................................................................................... 95 
+        7.4. Logout / Response / XML ................................................................................................................... 95 
+        7.6 Logout / Request / JSON ..................................................................................................................... 96 
+        7.7. Logout / Response / JSON ................................................................................................................. 96 
+        8. Best Practices ................................................................................................................................................ 97 
+        8.1 Ending a Session (Applies to DMS Customers Only, does not apply to SMS) ..................................... 97 
+        8.2 Browser Recommendation ................................................................................................................. 98
+    - page: 6
+      text: |-
+        9. Appendix ....................................................................................................................................................... 98 
+        9.1 Language Codes .................................................................................................................................. 98 
+        9.2 Login Error Codes ................................................................................................................................ 98 
+        9.3 Unit of Measure Table ........................................................................................................................ 98 
+        9.4 Specification Types ............................................................................................................................. 99
+    - page: 7
+      text: |-
+        1. Introduction 
+        Welcome to the Nexlink Transactions Guide for Nexpart! 
+        Nexpart is a Business-to-Business (B2B) eCommerce solution with a network of sellers comprised of Aftermarket (AM), 
+        OE Dealers (Light Duty-LD and Heavy Duty-HD), Recycled, and various other Specialty Sellers. It also functions as a 
+        Transaction Engine (TE) for bolt on solutions like eBay Link and Nexpart Counter Catalog (NCC). 
+        Shop Management Systems 
+        • Nexpart Vendors must provide clients a unique Host System account, then configure the same in Nexpart 
+        admin, with a username and password. The client can login at Nexpart.com, to individually access each of 
+        their single-vendor usernames. 
+        • Nexpart also offers multi-vendor solutions called Multi-Seller and SourceIT. While SourceIT is an enterprise-
+        level solution which requires involvement with the WHI Sales team, anyone can sign up for Multi-Seller at 
+        Nexpart.com. The registration is quick and allows a user to pair each of their single-vendor credentials, into 
+        the Dashboard (similar to a password wallet). While most vendors support the Multi-Seller catalog, some do 
+        not and hence it’s important to allow multiple Nexpart credentials. 
+        Nexpart Counter Catalog (NCC) for Distributor Management Systems (DMS) , also referred to as Point-of Sale (POS) 
+        • NCC provides Counterpersons a feature-rich catalog experience, with the most accurate and robust data in 
+        the industry, combined with the same features of Nexpart. Counterpersons will enjoy various search options 
+        not available in other solutions, to achieve better results, in the same or less time as legacy solutions. 
+        1.1 Purpose of this document 
+        This document, referred to as Nexlink, describes the specifications used to provide host software packages, integrated 
+        access to the Nexpart website. This allows users of SMS, DMS and POS systems, to seamlessly access the Nexpart-
+        based Web site, for the purposes of Catalog Application searches, stock checking parts, placing orders and/or lookup 
+        of special data, such as Specifications, TSBs and Preventive Maintenance. 
+        IMPORTANT: Nexlink provides two different buy-side solutions, each with unique functionality. As you review the 
+        spec, you will see some functions are specific to SMS or DMS/POS; each is described below: 
+        • NexLink provides Shop Management Systems (SMS) users access to Nexpart-based eCommerce, including 
+        Multi-Seller and SourceIT. 
+        • Nexlink also provides Distribution Management Systems (DMS) and Point of Sale (POS) system users access 
+        to Nexpart Counter Catalog (NCC). 
+         
+        1.2 Scope 
+        This document covers all technical descriptions of the interface and discusses some of the business uses as required 
+        for clarification. This document does not cover licensing or any other legal matters related to the interface.
+    - page: 8
+      text: |-
+        2. Process Overview 
+        The data elements, such as Nexpart login, part numbers or AAIA, VID or VIN vehicle codes, can be passed from the 
+        SMS or POS or DMS software to Nexpart. This allows SMS, POS or DMS providers to utilize the Nexpart site as an 
+        integrated ordering tool for their users purchasing parts using Nexpart. 
+        This also allows distributors offering Nexpart to retain their marketing identity and offer all of Nexpart’s other features 
+        to their customers who access their site from an integrated SMS, DMS or POS software package. 
+        The relevant data, such as Part Number, Description, Quantity and Price, are passed back to the DMS, SMS or POS 
+        software to be inserted into estimates and/or orders. This integration greatly reduces the user’s manual entry of part 
+        information and pricing into a SMS, POS or DMS system, after a stock check is performed or an order is placed with a 
+        distributor. It also improves accuracy by eliminating mis-keyed part information and pricing on the estimate, repair 
+        order or invoice. 
+        Here are the steps on how external Nexpart components flow: 
+        • A Nexpart vendor with a working Nexpart site is needed to develop this interface. Use your developers test 
+        login until you are sure you have the site operational. 
+        • Save Nexpart account info, such as acct info, acct login, password and associated vendor. These values should 
+        be in your app to allow selection and login. 
+        • SMS, DMS or POS passes login info to Nexpart via XML or JSON document. 
+        • Nexpart returns a URL string and other information to SMS or POS to establish a browser window and 
+        perform a catalog search. 
+        • The SMS, DMS or POS retrieves the cart or order details via a push (webpost) or pull method 
+        • Establishing Nexpart account(s) is a prerequisite to using an interface. As a developer, ask for a login and 
+        password to use in building your application. Use this login in all your tests. 
+        2.2 Document Exchange 
+        Messages are passed from one trading partner to another with the expectation that each partner will have a gateway 
+        that will examine each incoming document and determine what kind of processing is required. 
+        2.3 Required Elements 
+        All elements marked with a * are required. Any items that are not marked with it may be left blank (optional 
+        elements)
+    - page: 9
+      text: |-
+        3. Integration 
+        The different types of integrations included in the specifications encompass: 
+        • Login 
+        • Parts lookup, transfer or ordering 
+        • Labor 
+        • Specifications 
+        • Preventive Maintenance 
+        3.1 URL Specifications 
+        Integrators will use the following URLs to send XML or JSON transactions 
+         
+        • Nexpart Staging (UAT) URL: https://www.nexpartuat.com/webservices/nexlink/request.php 
+        • Nexpart Production/Live URL: https://www.nexpart.com/webservices/nexlink/request.php 
+         
+        When you are ready to start development, WHI will provide credentials to build and test against the Nexpart Staging 
+        environment. When complete, WHI team members will review, document, and certify the integration . After 
+        certification, Nexpart Production credentials will be provided. 
+        4. Launch (Login) 
+        This allows SMS/DMS/POS user to login to Nexpart application through their system. 
+        4.1 Launch / Request / Details 
+        In this specification, the request has various required entities. The requests and responses are supported in both XML 
+        and JSON formats. 
+        Request / 
+         Rev: This entity is required. This specifies Current Version of Nexlink spec being integrated to. 
+         ClientVersion: This entity is required. This specifies Version Number of the Client (your) Software 
+        Mobile: This entity is optional. Request mobile version to display. Values are “1” or “0”. Default is 0. 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Launch” 
+        PartnerProviderKey: This entity is required and represents the Partner Key assigned to the SMS, DMS or POS 
+        Provider. This will be provided to you by WHI. 
+        Username: This entity is required . 
+        • For SMS use, this must be a valid Nexpart, Multi-Seller, or SourceIT login username. 
+        • For DMS use, WHI will provide usernames specific to each counterperson but will not be identical to 
+        their Host System user credentials
+    - page: 10
+      text: |-
+        Password: This entity is required and represents the password associated with the username. For DMS this 
+        represents the counterperson password while for SMS integrations this represents the user’s password. 
+        Language: This entity is optional. This represents the Desired language, using one of the Nexpart Language 
+        codes. If no value is passed, then it defaults to “English”. Refer to the Appendix for more information 
+        CatalogType: This entity is optional. It is the catalog type used by the third party integrator. This will control 
+        what catalog data id’s are passed back to the integrator from the cart and order confirmation. The default is 
+        A (ACES) Allowable values are: A: ACES L: Legacy 
+        JumpTab / This entity is optional and allows to launch directly to the requested tab page. 
+         
+         Type: This entity is required. Allowable values are: 
+        home: Jumps to home page. No additional parameters can be sent with this option. This 
+        feature is not applicable for DMS integrations 
+        stock: Jumps to stock check page. See below for additional parameters that can be sent 
+        with this type of request. This feature is not applicable for DMS integrations 
+        amcat: Jumps to Aftermarket Catalog page. See below for additional parameters that can 
+        be sent with this type of request. 
+        ordercart: Jumps directly to the cart. Parts are required to be sent in this request. See 
+        below for additional parameters that can be sent with this type of request. This feature is 
+        not applicable for DMS integrations 
+        review: Jumps to Review Cart Page. No additional parameters can be sent with this option 
+        int: Jumps to Interchange Page. See below for additional parameters that can be sent with 
+        this type of request. 
+        bg: Jumps to the BG page. See below for additional parameters that can be sent with this 
+        type of request. 
+         
+         
+        When “stock” is passed, the following additional information can be sent with this type of request. 
+         
+        Parts / It’s an optional entity and only applicable for SMS integrations. SMS application sends a list 
+        or part(s) to stock check (stock) in the Nexpart application at the time of opening in Browser 
+        window. Integrator can send one or more parts with or without line code. DMS may not need this 
+        feature. 
+         Part / 
+         PartNumber: This entity is required. 
+        LineCode: 
+        • For single-vendor usernameThis entity is optional and is the Linecode for 
+        the part number to stock check 
+        MfgCode: This entity is optional and is the WHI Catalog assigned manufacturer 
+        code for each manufacturer. 
+        OrderQty: This entity is optional and represents Order Quantity for the part to 
+        stock check. Defaults to 1.
+    - page: 11
+      text: |-
+        PartIdentifier: This entity is optional and is the Part Identifier for each Part from 
+        your system 
+         
+         
+         
+         
+         
+         
+        When “ordercart” is passed, the following additional information can be sent with this type of 
+        request. 
+         
+        Parts / It’s an optional entity and only applicable for SMS integrations. SMS application sends a list 
+        or part(s) directly to the cart (ordercart) in the Nexpart application at the time of opening in Browser 
+        window. Integrator can send one or more parts with or without line code. DMS may not need this 
+        feature. 
+         Part / 
+         PartNumber: This entity is required. 
+        LineCode: This entity is optional and is the Linecode for the part number to stock 
+        check 
+        MfgCode: This entity is optional and is the WHI Catalog assigned manufacturer 
+        code for each manufacturer. 
+        PartType: This entity is optional and is the WHI Catalog assigned part type.. 
+        OrderQty: This entity is optional and represents Order Quantity for the part to 
+        stock check. Defaults to 1. 
+        PartIdentifier: This entity is optional and is the Part Identifier for each Part from 
+        your system 
+        Price: This entity is required for ordercart. This is the price of the part that was 
+        sent in the cart response. 
+        BranchId: This entity is required for ordercart. This is the Nexpart Branch Id from 
+        the cart response for the parts so they can be added directly to the cart for 
+        ordering. 
+        PONumber: This entity is optional for ordercart. This allows to set a different 
+        PONumber per seller or location. 
+        SellerPartDesc: This entity is required for ordercart. Seller Description of the part 
+        that was received from the cart request.. 
+         
+        When “amcat” is is passed, the following additional information can be sent with this type of 
+        request.
+    - page: 12
+      text: |-
+        VehicleType: This entity is optional. This is the Type of vehicle being passed in parameter vid. The 
+        valid values are “C” for ACES Base Vehicle Id. Default is “C” 
+        VehicleId: This entity is optional. This is the Vehicle id to be selected before any catalog lookups. If 
+        no vtype valid is passed, then it defaults to “C”. For ACES, this is the BaseVehicleId 
+        EngineConfigId: This entity is optional. This is the EngineConfigId when Vehicle Type is ACES 
+        SubmodelId: This entity is optional. This is the ACES Sub-Model Id when Vehicle Type is ACES 
+        Vin: This entity is optional. This is the Vehicle Identification number for vehicle lookup 
+        Mileage: This entity is optional. This is the Mileage of the car 
+        PtType: This entity is optional. Type of Part Term - Valid Value: C for ACES. 
+        PtNumbers / This entity is optional and represents the list of Part Terms. Currently only the first part 
+        term is being used for results display. A vehicle is required to use this option. 
+         PtNumber: This entity is required if PtType is passed and represents the Part Term. 
+        Usg: This entity is optional and is the the catalog subgroup number. To execute this parameter value 
+        vehicle must be passed. If vehicle and usg value is passed, then it defaults the Nexpart screen to 
+        Catalog Results of vehicle and usg. 
+        SearchText: This entity is optional. Smart Search text string used to perform a catalog Smart Search 
+        lookup. If an exact match to a WHI Part Name is passed, then the catalog will skip the Smart Search 
+        results and go directly to the catalog results. (Requires vehicle to be passed.) 
+         When “int” is passed, the following additional information may be sent. 
+         
+        Parts / It’s an optional entity that allows passing part number for interchange lookup. Only the first 
+        part term is being used for interchange results display. 
+         Part / 
+         PartNumber: This entity is required. 
+        MfgCode: This entity is optional and is the WHI Catalog assigned manufacturer 
+        code for each manufacturer. 
+        LineCode: This entity is optional and is the seller Linecode for the part number. 
+        When “bg” is passed, the following additional information may be sent. 
+         
+        Parts / It’s an optional entity that allows passing part number for buyer’s guide lookup. Only the 
+        first part term is being used for interchange results display. 
+         Part / 
+         PartNumber: This entity is required.
+    - page: 13
+      text: |-
+        MfgCode: This entity is optional and is the WHI Catalog assigned manufacturer 
+        code for each manufacturer. 
+        LineCode: This entity is optional and is the seller Linecode for the part number. 
+        Identifier: This entity is required. Identifier for User’s Items in the Cart 
+        PONumber: This entity is optional. This will auto-populate the PO Number field in the cart. 
+        ClearCart: This entity is optional. Deletes pre-existing order review cart details. Values are “1” or “0”. Default 
+        is 0. 
+        DisablePOBtn: This entity is optional and allows the integrator to disable placing orders on Nexpart. Remove 
+        the Place Order Button from the Nexpart Order Review screen. Values are “1” or “0”. Default is 0. 
+        ReturnURL: This entity is optional. URL to return to for failed logins. The errcode is returned with the query 
+        name of “err”. Refer to the Appendix for more information. If no value is passed, then it defaults to “Nexpart 
+        screen”. 
+        LogoutURL: This entity is optional. URL to return to for when user logs out. If no value is passed, then it 
+        defaults to “Nexpart screen”. 
+        EmbeddedBrowser: This entity is optional. Indicates browser is embedded in your application. The transfer 
+        button in the cart does not function, so your application and detect it being clicked. 
+        WebPostURL: This entity is optional. URL to post Cart or Order Contents. HTTP Basic Authentication is 
+        supported. The username and password will be supplied by the integrator to be used for authentication. 
+        WebPostURL must be HTTPS 
+        WebPostBtnLabel: This entity is optional. Customizable text placed on the button for the WebPostURL. 
+        WebPostPlaceOrdURL: This entity is optional. URL to automatically post Order Contents. HTTP Basic 
+        Authentication is supported. The username and password will be supplied by the integrator to be used for 
+        authentication. WebPostURL must be HTTPS. Only available for ORDERCART. 
+        WebPostPlaceOrdBtnLabel: This is optional. Text on the place order button for WebPostPlaceOrdURL. 
+        WebPostClearCart: This entity is optional. Whether to clear the cart after posting the contents to the 
+        WebPostURL. Values are “1” or “0”. Default is 0. 
+        LiveCart: This entity is optional. This enables ability to transfer part back to your system as the user hits the 
+        “add” buttons instead of transferring it after it’s in the cart. This requires WebPostURL to be passed and 
+        accepting the cart contents. Possible values are either 0 or 1. Default value is 0. (DMS Only) 
+        InterfaceOptions / This entity is required for DMS customers and does not apply for SMS. 
+         AccountId: This entity is required. Account Id of the customer to use for parts lookup 
+        AccountPassword: This entity is optional. Account Password of the customer to use for parts lookup 
+        BuyerId: This entity is optional. It is needed for Sparklink Integrations that require it. Typically used 
+        to support multiple AR companies.
+    - page: 14
+      text: |-
+        CustType: This entity is optional. Customer Type requested for the customer. Used for 
+        Counterperson Created customers only. Customer Type must be setup in NCC admin site. 
+        PhoneNumber: This entity is optional. Phone Number of the Account to launch. 
+        Locations / This entity is optional. This represents the locations to query for parts for this account. 
+        Will contain the distributors internal branch number for a branch (should already be setup in 
+        nexpart), the following will occur when passed. 
+        1. The default branch is changed to the branch passed 
+        2. Auto Sort is Disabled 
+         Location / 
+        Seq: This entity is optional. Numeric sequence number of the branch. Default 
+        Branch must be sequence 1. 
+         Id: This entity is required. Identifier for the branch in the DMS system 
+         
+        SecondaryLines: This entity is optional. Allow Showing results using Secondary DCF. Possible values 
+        are 1 or 0. Default is 0. 
+        AllLines: This entity is optional. Allow Showing results for all Lines. Possible values are 1 or 0. Default 
+        is 0. 
+        CatalogToggleBtnURL: This entity is optional. When passed a button is added next to each part in 
+        the catalog. When the user clicks this button, the URL is launched and the mfgCode, lineCode and 
+        partNumber are passed to it. The format of this URL needs to be: 
+        http://www.someurl.com/page.ext?yourCustomWHIBrandCodeAttribute={mfgCode}&yourCustomLi
+        neCodeAttribute={lineCode}&yourcustomPartNoAttribute={partNumber} where each of {mfgCode}, 
+        {lineCode} and {partNumber} will be replaced with their appropriate values before launch. Clicking 
+        the toggle button will navigate the current web browser window to the specified URL, taking the 
+        user out of the Nexpart session. This option assumes that Nexpart is running in an embedded web 
+        browser within a DMS application window. The DMS application will trap the “navigate” event, 
+        parse the URL, perform an alternate action, and cancel the “navigate” event. 
+        EditPrice: This entity is optional. Allow to edit prices from catalog results. Possible values are 1 or 0. 
+        Default is 0. 
+        HideSpecialOrder: This entity is optional. Hides the add to cart/ transfer button for not on file parts 
+        (special order parts). Possible values are 1 or 0. Default is 0. 
+        TransactionCodes / This entity is optional and represents list of transaction codes to apply to parts 
+        for processing Lost Sales, Core Exchange, Backorder etc. 
+         TransactionCode / 
+        Code: This entity is required and can be maximum 50 characters. Transaction code in 
+        the DMS 
+         
+         Desc: This entity is required. Transaction code description in the DMS
+    - page: 15
+      text: |-
+        4.1.1 Launch / Request / Details / Quick Info 
+         
+        Request / 
+        Component Occurs Required Applies To Type Value(s) 
+        Rev 1..1 Yes SMS, DMS Decimal "4.0" 
+        ClientVersion 1..1 Yes SMS, DMS String System 
+        Defined 
+        Mobile 1..1 No SMS, DMS Bit System 
+        Defined 
+        RequestType 1..1 Yes SMS, DMS String "Launch" 
+        PartnerProviderKey 1..1 Yes SMS, DMS String Will be 
+        Provided 
+        by WHI 
+        Username 1..1 Yes SMS, DMS String System 
+        Defined 
+        Password 1..1 Yes SMS, DMS String System 
+        Defined 
+        Language 0..1 Yes SMS, DMS Enumeration See 
+        Appendix 
+        CatalogType 0..1 No SMS, DMS Enumeration "A" or "L" 
+        JumpTab 0..1 No SMS, DMS String home, 
+        stock, 
+        amcat, 
+        ordercart 
+        orreview, 
+        int or bg 
+        JumpTab → Type 1..1 Yes SMS, DMS 
+        JumpTab → Parts 0..1 No SMS, DMS - - 
+        JumpTab → Parts → Part 0..* No SMS, DMS - - 
+        JumpTab → Parts → Part → PartNumber 1..1 Yes SMS, DMS String User 
+        Defined 
+        JumpTab → Parts → Part → MfgCode 1..1 Yes SMS, DMS String User 
+        Defined 
+        JumpTab → Parts → Part → LineCode 0..1 No SMS String System 
+        Defined
+    - page: 16
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        JumpTab → Parts → Part → OrderQty 0..1 No SMS Integer User 
+        Defined 
+        JumpTab → Parts → Part → PartIdentifier 0..1 No SMS String System 
+        Defined 
+        JumpTab → Parts → Part → Price 0..1 No SMS String System 
+        Defined 
+        JumpTab → Parts → Part → BranchId 0..1 No SMS String System 
+        Defined 
+        JumpTab → Parts → Part → PONumber 0..1 No SMS String System 
+        Defined 
+        JumpTab → VehicleType 0..1 No SMS, DMS Enumeration “C" 
+        JumpTab → VehicleId 0..1 No SMS, DMS Integer System 
+        Defined 
+        JumpTab → EngineConfigId 0..1 No SMS, DMS Integer System 
+        Defined 
+        JumpTab → SubmodelId 0..1 No SMS, DMS Integer System 
+        Defined 
+        JumpTab → Vin 0..1 No SMS, DMS String System 
+        Defined (17 
+        chars) 
+        JumpTab → Mileage 0..1 No SMS, DMS Integer System 
+        Defined 
+        JumpTab → PtType 0..1 No SMS, DMS Enumeration "C" 
+        JumpTab → PtNumbers 0..1 No SMS, DMS System 
+        Defined 
+        JumpTab → PtNumbers → PtNumber 1..* No SMS, DMS Integer System 
+        Defined 
+        JumpTab → Usg 0..1 No SMS, DMS Integer System 
+        Defined 
+        JumpTab → SearchText 0..1 No SMS, DMS String System 
+        Defined
+    - page: 17
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Identifier 0..1 Yes SMS, DMS String System 
+        Defined 
+        PONumber 0..1 No SMS String System 
+        Defined 
+        ClearCart 0..1 No SMS, DMS Bit 1 or 0 
+        DisablePOBtn 0..1 No SMS, DMS Bit 0 or 1 
+        ReturnURL 0..1 No SMS, DMS URI System 
+        Defined 
+        LogoutURL 0..1 No SMS, DMS URI System 
+        Defined 
+        EmbeddedBrowser 0..1 No SMS Bit 0 or 1 
+        WebPostURL 0..1 No SMS, DMS URI System 
+        Defined 
+        WebPostBtnLabel 0..1 No SMS, DMS String System 
+        Defined 
+        WebPostPlaceOrdURL 0..1 No SMS URI System 
+        Defined 
+        WebPostPlaceOrdBtnLabel 0..1 No SMS String System 
+        Defined 
+        WebPostClearCart 0..1 No SMS, DMS Bit 1 or 0 
+        LiveCart 0..1 No DMS Bit 1 or 0 
+        InterfaceOptions 0..1 No for 
+        SMS, Yes 
+        for DMS 
+        DMS - - 
+        InterfaceOptions → AccountId 1..1 Yes DMS String System 
+        Defined 
+        InterfaceOptions → AccountPassword 1..1 No DMS String System 
+        Defined 
+        InterfaceOptions → BuyerId 1..1 No DMS String System 
+        Defined 
+        InterfaceOptions → CustType 1..1 No DMS String System 
+        Defined 
+        InterfaceOptions → PhoneNumber 1..1 Yes DMS String System 
+        Defined
+    - page: 18
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        InterfaceOptions → Locations 1..1 Yes if 
+        Account 
+        does not 
+        exist on 
+        Nexpart. 
+        DMS - - 
+        InterfaceOptions → Locations→ Location 
+         
+        0..* Yes DMS 
+        InterfaceOptions → Locations → Location → Seq 1..1 Yes DMS Integer System 
+        Defined 
+        InterfaceOptions → Locations → Location → Id 1..1 Yes DMS String System 
+        Defined 
+        InterfaceOptions → SecondaryLines 0..1 No DMS Bit 1 or 0 
+        InterfaceOptions → AllLines 0..1 No DMS Bit 1 or 0 
+        InterfaceOptions → CatalogToggleBtnURL 0..1 No DMS URI System 
+        Defined 
+        InterfaceOptions → EditPrice 0..1 No DMS 1 or 0 System 
+        Defined 
+        InterfaceOptions → HideSpecialOrder 0..1 No DMS 1 or 0 System 
+        Defined 
+        InterfaceOptions → TransactionCodes 0..1 No DMS - - 
+        InterfaceOptions → TransactionCodes → 
+        TransactionCode 
+        1..* No DMS - - 
+        InterfaceOptions → TransactionCodes → 
+        TransactionCode → Code 
+        1..1 No DMS String System 
+        Defined 
+        InterfaceOptions→ TransactionCodes → 
+        TransactionCode → Desc 
+        1..1 No DMS String System 
+        Defined 
+         
+        4.2 Launch / Response / Details 
+         
+        Response / 
+        RequestType: This entity is required. For this type of transaction, the value is “Launch” 
+         Success: This entity is required. Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         ErrorCount: This entity is required. Numeric count of errors. If no errors value returned is 0. 
+         Errors / This entity is required only if ErrorCount > 0.
+    - page: 19
+      text: |-
+        ErrorCode: This entity is required. Short Error Code for the error. See appendix for more details. 
+         ErrorDesc: This entity is required. Detailed Error Description 
+        LaunchURL: This entity is required. When request is successful, URL is returned to launch the browser 
+        window with. 
+        ApiTokenKey: This entity is required. API Authorization Token to use for subsequent calls within the same 
+        session for the same user 
+         
+         
+        4.2.1 Launch / Response / Details / Quick Info 
+        Response / 
+        Component Occurs Required Applies To Type Value(s) 
+        RequestType 1..1 Yes SMS, DMS String "Launch" 
+        Success 1..1 Yes SMS, DMS Bit 1 or 0 
+        ErrorCount 1..1 Yes SMS, DMS Integer System 
+        Defined 
+        Errors 0..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS - - 
+        Errors → Error 1..* Yes if 
+        errors 
+        else No 
+        SMS, DMS - - 
+        Errors → Error → ErrorCode 1..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS Integer See 
+        appendix 
+        Errors → Error → ErrorDesc 1..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS String See 
+        appendix 
+        LaunchURL 0..1 Yes if no 
+        errors 
+        else No 
+        SMS, DMS URI System 
+        Defined 
+        ApiTokenKey 0..1 Yes if no 
+        errors 
+        else No 
+        SMS, DMS String System 
+        Defined
+    - page: 20
+      text: |-
+        4.3 Launch / Request / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+        Version of Spec integrated to * Required 
+         <Rev>4.0</Rev> 
+        Version Number of Client (your) Software * Required 
+         <ClientVersion>2.6</ClientVersion> 
+        Type of Request. For this type of transaction the value is “Launch” * Required 
+         <RequestType>Launch</RequestType> 
+        Partner Key of the SM, DMS or POS Provider * Required 
+         <PartnerProviderKey>ProviderKey</PartnerProviderKey> 
+        Valid Username for Nexpart. For DMS this represents the counterperson login while for SMS integrations this represents the user’s 
+        login. * Required 
+         <Username>abc</Username> 
+        Valid Password for Nexpart. For DMS this represents the counterperson password while for SMS integrations this represents the 
+        user’s password. * Required 
+         <Password>pass</Password> 
+        Desired language, using one of the Nexpart Language codes. If no value is passed, then it defaults to “English”. Refer to the 
+        Appendix for more information. 
+         <Language>en</Language> 
+        The catalog type used by the third party integrator. This will control what catalog data id’s are passed back to the integrator from 
+        the cart and order confirmation. The default is A (ACES) Allowable values are: A: ACES L: Legacy 
+         <CatalogType>A</CatalogType> 
+        Jumps to just the tab page at launch 
+         <JumpTab> 
+        Allowable values are: 
+        home: Jumps to home page 
+        stock: Jumps to stock check page (if available) - not applicable to DMS Integrations 
+        ordercart: Jumps to the cart, populating with parts passed in the request. 
+        amcat: Jumps to Aftermarket Catalog page (if available) 
+        review: Jumps to Review Cart Page 
+         <Type></Type> 
+        Client Application can send a list or part(s) to stock check or part to lookup for Interchange or Buyer’s Guide Lookup to 
+        Nexpart application at the time of opening in Browser window. 
+         <Parts> 
+         <Part> 
+        PartNumber to stock check or interchange or buyer’s guide lookup. Valid only when Type = 
+        “stock” or “int” or “bg” or “ordercart” 
+         <PartNumber></PartNumber> 
+        WHI assigned Manufacturer Code for the part number for Interchange or Buyer’s Guide Lookup. 
+        Valid only when Type = “bg” or “int” 
+         <MfgCode></MfgCode>
+    - page: 21
+      text: |-
+        Linecode for the part number to stock check. Valid only when Type = “stock” or “ordercart” 
+         <LineCode></LineCode> 
+        Order Quantity for the part to stock check. Defaults to 1. Valid only when Type = “stock” or 
+        “ordercart” 
+        <OrderQty></OrderQty> 
+        Part Identifier for each Part from your system. Valid only when Type = “stock” or “ordercart” 
+        <PartIdentifier></PartIdentifier> 
+        Part Price that was received from the cart response. Valid only when Type = “ordercart” 
+        <Price></Price> 
+        Part BranchId received from the cart response Valid only when Type = “ordercart” 
+        <BranchId></BranchId> 
+        Part PONNumber Populates the PONumber in the cart for this part. Valid only when Type = 
+        “ordercart” 
+        <PONumber></PONumber> 
+        Part SellerPartDesc - Part description received from cart transaction Required when Type = 
+        “ordercart” 
+        <SellerPartDesc></SellerPartDesc> 
+         </Part> 
+         </Parts> 
+        Type of vehicle being passed in parameter vid. The valid values is. “C” for ACES Base Vehicle Id. Default is “C”. Valid 
+        only when Type = “amcat” 
+         <VehicleType>c</VehicleType> 
+        Vehicle id to be selected before any catalog lookups. If no VehicleType valid is passed, then it defaults to “C”. For 
+        ACES, this is the BaseVehicleId. Valid only when Type = “amcat” 
+         <VehicleId></VehicleId> 
+        EngineConfigId when Vehicle Type is ACES. Valid only when Type = “amcat” 
+         <EngineConfigId></EngineConfigId> 
+        ACES Sub-Model Id. Valid only when Type = “amcat” 
+         <SubmodelId></SubmodelId> 
+        Vehicle Identification number for vehicle lookup. Valid only when Type = “amcat” 
+         <Vin></Vin> 
+        Mileage of the car. Valid only when Type = “amcat” 
+         <Mileage></Mileage> 
+        Optional the list of Part Terms. Currently only the first part term is being used for results display. Valid only when Type 
+        = “amcat” 
+        <PtNumbers> 
+        Part Term - requires Vehicle to passed. Valid only when Type = “amcat” 
+        <PtNumber></PtNumber> 
+         </PtNumbers>
+    - page: 22
+      text: |-
+        This parameter value represents the catalog subgroup number. To execute this parameter value vehicle must be 
+        passed. If vehicle and usg value is passed, then it defaults the Nexpart screen to Catalog Results of vehicle and usg. 
+        Valid only when Type = “amcat” 
+        <Usg></Usg> 
+        Smart Search text string used to perform a catalog Smart Search lookup. If an exact match to a WHI Part Name is 
+        passed, then the catalog will skip the Smart Search results and go directly to the catalog results. (Requires vehicle to 
+        be passed.) Valid only when Type = “amcat” 
+         <SearchText></SearchText> 
+         </JumpTab> 
+        Identifier for User’s Items in the Cart 
+         <Identifier>whi002</Identifier> 
+        PONumber to populate in the cart. 
+         <PONumber>JO8899</PONumber> 
+        Deletes order review cart details. Values are “1” or “0”. Default is 0. 
+         <ClearCart>1</ClearCart> 
+        Remove the Place Order Button from the Nexpart Order Review screen. Values are “1” or “0”. Default is 0. 
+         <DisablePOBtn></DisablePOBtn> 
+        URL to return to for failed logins. The errcode is returned with the query name of “err”. Refer to the Appendix for more 
+        information. If no value is passed, then it defaults to “Nexpart screen”. 
+         <ReturnURL>http://www.nexpart.com/error.php</ReturnURL> 
+        URL to return to for when user logs out. If no value is passed, then it defaults to “Nexpart screen”. 
+         <LogoutURL>http://www.nexpart.com</LogoutURL> 
+        URL to post Cart or Order Contents. Note: WebPostURL must be HTTPS 
+         <WebPostURL></WebPostURL> 
+        Whether to clear the cart after posting the contents to the WebPostURL. Values are “1” or “0”. Default is 0. 
+         <WebPostClearCart>1</WebPostClearCart> 
+        This enables ability to transfer part back to your system as the user hits the “add” button instead of transferring it after it’s in the 
+        cart. This requires WebPostURL to be passed and accepting the cart contents. Possible values are 0 or 1. Default is 0. (DMS Only) 
+         <LiveCart></LiveCart> 
+        Additional features available only for DMS integrations. 
+         <InterfaceOptions> 
+        Account Id of the customer to use for parts lookup 
+        <AccountId></AccountId> 
+        Account Password of the customer to use for parts lookup 
+        <AccountPassword></AccountPassword> 
+        BuyerId, if required for Sparklink Integrations 
+        <BuyerId></BuyerId> 
+        Customer Type of the customer 
+        <CustType></CustType> 
+        Phone Number of the Account to launch
+    - page: 23
+      text: |-
+        <PhoneNumber></PhoneNumber> 
+        This represents the locations to query for parts for this account. Will contain the distributors internal branch 
+        number for a branch (should already be setup in nexpart), the following will occur when passed. 
+        1. The default branch is changed to the branch passed 
+        2. Auto Sort is Disabled 
+         <Locations> 
+         <Location> 
+        Numeric sequence number of the branch. Default Branch must be sequence 1. 
+        <Seq></Seq> 
+        Identifier for the branch in the DMS system 
+        <Id></Id> 
+         </Location> 
+         </Locations> 
+        Allow Showing results using Secondary DCF. Possible values are 1 or 0. Default is 0. 
+        <SecondaryLines></SecondaryLines> 
+        Allow Showing results for all Lines. Possible values are 1 or 0. Default is 0. 
+        <AllLines></AllLines> 
+        When passed a button is added next to each part in the catalog. When the user clicks this button, the URL is launched 
+        and the mfgCode, lineCode and partNumber are passed to it. The format of this URL needs to be: 
+        http://www.someurl.com/page.ext?yourCustomWHIBrandCodeAttribute={mfgCode}&yourCustomLineCodeAttribute={li
+        neCode}&yourcustomPartNoAttribute={partNumber} where each of {mfgCode}, {lineCode} and {partNumber} will be 
+        replaced with their appropriate values before launch. Clicking the toggle button will navigate the current web browser 
+        window to the specified URL, taking the user out of the Nexpart session. This option assumes that Nexpart is running in 
+        an embedded web browser within a DMS application window. The DMS application will trap the “navigate” event, parse 
+        the URL, perform an alternate action, and cancel the “navigate” event. 
+        <CatalogToggleBtnURL></CatalogToggleBtnURL> 
+        Allow to edit prices from catalog results. Possible values are 1 or 0. Default is 0. 
+         <EditPrice></EditPrice> 
+        Hides the add to cart/ transfer button for not on file parts (special order parts). Possible values are 1 or 0. Default is 0. 
+         <HideSpecialOrder></HideSpecialOrder> 
+        This optional list represents transaction codes to parts for processing Lost Sales, Core Exchange, Backorder etc. 
+         <TransactionCodes> 
+         <TransactionCode> 
+        Transaction code in the DMS 
+        <Code></Code> 
+        Transaction code description in the DMS 
+        <Desc></Desc> 
+         </TransactionCode> 
+        </TransactionCodes> 
+         </InterfaceOptions>
+    - page: 24
+      text: |-
+        </Request> 
+        4.4. Launch / Response / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        Type of Request. For this type of transaction the value is “Launch” * Required 
+         <RequestType>Launch</RequestType> 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         <Success></Success> 
+        Numeric count of errors. If no errors value returned is 0. 
+        <ErrorCount></ErrorCount> 
+        Returned when the error count > 0. 
+        <Errors> 
+         <Error> 
+        Short Error Code for the error. 
+         <ErrorCode></ErrorCode> 
+        Detailed Error Description 
+         <ErrorDesc></ErrorDesc> 
+         </Error> 
+         </Errors> 
+        When request is successful, URL is returned to launch the browser window with. 
+        <LaunchURL></LaunchURL> 
+        API Authorization Token to use for subsequent calls within the same session for the same user. 
+         <ApiTokenKey></ApiTokenKey> 
+        </Response> 
+         
+         
+         
+        4.5. Launch / Request / JSON 
+        { 
+         "Request": { 
+        Version of Spec integrated to * Required 
+         "Rev": "4.0", 
+        Version Number of Client (your) Software * Required 
+         "ClientVersion": "2.6",
+    - page: 25
+      text: |-
+        Type of Request. For this type of transaction the value is “Launch” * Required 
+         "RequestType": "Launch", 
+        Security Key of the SMS, DMS or POS Provider or Id * Required 
+         "PartnerProviderKey": "ProviderKey", 
+        Valid Username for Nexpart. For DMS this represents the counterperson login while for SMS integrations this 
+        represents the user’s login. * Required 
+         "Username": "abc", 
+        Valid Password for Nexpart. For DMS this represents the counterperson password while for SMS integrations this 
+        represents the user’s password. * Required 
+         "Password": "", 
+        Desired language, using one of the Nexpart Language codes. If no value is passed, then it defaults to “English”. Refer to 
+        the Appendix for more information. 
+         "Language": "", 
+        The catalog type used by the third party integrator. This will control what catalog data id’s are passed back to the 
+        integrator from the cart and order confirmation. The default is A (ACES) Allowable values are: A: ACES L: Legacy 
+         "CatalogType": "", 
+        Jumps to just the tab page at launch 
+         
+         "JumpTab": { 
+        Allowable values are: 
+        home: Jumps to home page 
+        stock: Jumps to stock check page (if available) - not applicable to DMS Integrations 
+        amcat: Jumps to Aftermarket Catalog page (if available) 
+        review: Jumps to Review Cart Page 
+         "Type": "", 
+        Client Application can send a list or part(s) to stock check or part to lookup for Interchange or Buyer’s 
+        Guide Lookup to Nexpart application at the time of opening in Browser window. 
+         "Parts": { 
+         "Part": [{ 
+        PartNumber to stock check or lookup interchange or buyer’s guide. Valid only when 
+        Type = “stock” or “int” or “bg” 
+         "PartNumber": "", 
+        WHI assigned Manufacturer Code for the part number for Interchange or Buyer’s 
+        Guide Lookup. Valid only when Type = “bg” or “int” 
+        "MfgCode": "", 
+        Linecode for the part number to stock check. Valid only when Type = “stock” 
+        "LineCode": "", 
+        Order Quantity for the part to stock check. Defaults to 1. Valid only when Type = 
+        “stock”. 
+         "OrderQty": "",
+    - page: 26
+      text: |-
+        Part Identifier for each Part from your system. Valid only when Type = “stock”. Valid 
+        only when Type = “stock” 
+         "PartIdentifier": "" 
+        Part SellerPartDesc - Part description received from cart transaction Required when 
+        Type = “ordercart” 
+         "SellerPartDesc": "" 
+         }] 
+         }, 
+        Type of vehicle being passed in parameter vid. The valid is “C” for ACES Base Vehicle Id. Default is “C”. Valid 
+        only when Type = “amcat” 
+         "VehicleType": "", 
+        Vehicle id to be selected before any catalog lookups. If no vtype valid is passed, then it defaults to “C”. For 
+        ACES, this is the BaseVehicleId. Valid only when Type = “amcat” 
+         "VehicleId": "", 
+        EngineConfigId when Vehicle Type is ACES. Valid only when Type = “amcat” 
+         "EngineConfigId": "", 
+        Version of Spec integrated to. Valid only when Type = “amcat” 
+         "SubmodelId": "", 
+        Vehicle Identification number for vehicle lookup. Valid only when Type = “amcat” 
+         "Vin": "", 
+        Mileage of the car. Valid only when Type = “amcat” 
+         "Mileage": "", 
+        Type of Part Type - C for ACES. Valid only when Type = “amcat” 
+         "PtType": "", 
+        Optional the list of Part Terms. Currently only the first part term is being used for results display. Valid only 
+        when Type = “amcat” 
+         "PtNumbers": { 
+        Part Term - requires Vehicle to passed. Valid only when Type = “amcat” 
+         "PtNumber": [""], 
+        }, 
+        This parameter value represents the catalog subgroup number. To execute this parameter value vehicle 
+        must be passed. If vehicle and usg value is passed, then it defaults the Nexpart screen to Catalog Results of 
+        vehicle and usg. Valid only when Type = “amcat” 
+         "Usg": "", 
+        Smart Search text string used to perform a catalog Smart Search lookup. If an exact match to a WHI Part 
+        Name is passed, then the catalog will skip the Smart Search results and go directly to the catalog results. 
+        (Requires vehicle to be passed.). Valid only when Type = “amcat” 
+         "SearchText": "",
+    - page: 27
+      text: |-
+        }, 
+        Identifier for User’s Items in the Cart 
+         "Identifier": "", 
+        PO Number to populate in the cart. 
+         "PONumber": "", 
+        Deletes order review cart details. Values are “1” or “0”. Default is 0. 
+         "ClearCart": "", 
+        Remove the Place Order Button from the Nexpart Order Review screen. Values are “1” or “0”. Default is 0. 
+         "DisablePOBtn": "", 
+        URL to return to for failed logins. The errcode is returned with the query name of “err”. Refer to the Appendix for more 
+        information. If no value is passed, then it defaults to “Nexpart screen”. 
+        "ReturnURL": "", 
+        URL to return to for when user logs out. If no value is passed, then it defaults to “Nexpart screen”. 
+        "LogoutURL": "", 
+        URL to post Cart or Order Contents. Note: WebPostURL must be HTTPS 
+        "WebPostURL": "", 
+        Whether to clear the cart after posting the contents to the WebPostURL. Values are “1” or “0”. Default is 0. 
+        " WebPostClearCart": "1", 
+        This enables ability to transfer part back to your system as the user hits the “add” buttons instead of transferring it after 
+        it’s in the cart. This requires WebPostURL to be passed and accepting the cart contents. Possible values are either 0 or 
+        1. Default value is 0. (DMS Only) 
+        "LiveCart": "", 
+        Additional features applicable only to DMS integrations 
+        "InterfaceOptions": { 
+        Account Id of the customer to use 
+         "AccountId": "", 
+        Account Password of the customer to use 
+         "AccountPassword": "", 
+        BuyerId, if required for Sparklink Integrations 
+         "BuyerId": "", 
+        Customer Type of the customer 
+         "CustType": "", 
+        Phone Number of the Account to launch 
+         "PhoneNumber": "", 
+        Will contain the distributors internal branch number for a branch (should already be setup in nexpart), the 
+        following will occur when passed. 
+        1. The default branch is changed to the branch passed
+    - page: 28
+      text: |-
+        2. Auto Sort is Disabled 
+         "Locations": { 
+         "Location": [{ 
+        Numeric sequence number of the branch. Default Branch must be sequence 1. 
+         "Seq": "", 
+        Identifier for the branch in the POS system 
+        "Id": "" 
+         }] 
+         }, 
+        Allow Showing results using Secondary DCF. Possible values are 1 or 0. Default is 0. 
+         "SecondaryLines": "", 
+        Allow Showing results for all Lines. Possible values are 1 or 0. Default is 0. 
+        "AllLines": "", 
+        When passed a button is added next to each part in the catalog. When the user clicks this button, the URL is 
+        launched and the mfgCode, lineCode and partNumber are passed to it. The format of this URL needs to be: 
+        http://www.someurl.com/page.ext?yourCustomWHIBrandCodeAttribute={mfgCode}&yourCustomLineCodeA
+        ttribute={lineCode}&yourcustomPartNoAttribute={partNumber} where each of {mfgCode}, {lineCode} and 
+        {partNumber} will be replaced with their appropriate values before launch. Clicking the toggle button will 
+        navigate the current web browser window to the specified URL, taking the user out of the Nexpart 
+        session. This option assumes that Nexpart is running in an embedded web browser within a DMS application 
+        window. The DMS application will trap the “navigate” event, parse the URL, perform an alternate action, and 
+        cancel the “navigate” event. 
+        "CatalogToggleBtnURL": "", 
+        This optional list represents transaction codes to parts for processing Lost Sales, Core Exchange, Backorder 
+        etc. 
+        "EditPrice": "", 
+        "HideSpecialOrder": "", 
+        This optional list represents transaction codes to parts for processing Lost Sales, Core Exchange, Backorder 
+        etc. 
+        "TransactionCodes": { 
+         "TransactionCode": [{ 
+        Transaction code in the DMS 
+         "Code": "", 
+        Transaction code description in the DMS 
+        "Desc": "" 
+         }] 
+         }
+    - page: 29
+      text: |-
+        } 
+         } 
+        } 
+         
+        4.6. Launch / Response / JSON 
+        { 
+         "Response": { 
+        Type of Request. For this type of transaction the value is “Launch” * Required 
+         "RequestType": "Launch", 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         "Success": "", 
+        Numeric count of errors. If no errors value returned is 0. 
+         "ErrorCount": "", 
+         "Errors": { 
+         "Error": [{ 
+        Short Error Code for the error. 
+         "ErrorCode": "", 
+        Detailed Error Description 
+         "ErrorDesc": "" 
+         }] 
+         }, 
+        When request is successful, URL is returned to launch the browser window with. 
+         "LaunchURL": "", 
+        API Authorization Token to use for subsequent calls within the same session for the same user. 
+         "ApiTokenKey": "" 
+         } 
+        }
+    - page: 30
+      text: |-
+        4.7. Launch / Examples / Login 
+         
+        4.7.1 XML 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Mobile>0</Mobile> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+         <Identifier>JOB1210</Identifier> 
+        <ClearCart>1</ClearCart> 
+        </Request> 
+         
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <LaunchURL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 31
+      text: |-
+        4.7.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "MyProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”. 
+         "ClearCart": "1" 
+         } 
+        } 
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453 ", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 32
+      text: |-
+        4.8. Launch / Examples / Stock Check Part(s) 
+        This example only applies to SMS integrations. 
+         
+        4.8.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+        <Identifier>JOB1210</Identifier> 
+        <JumpTab> 
+         <Type>stock</Type> 
+         <Parts> 
+         <Part> 
+         <PartNumber>PF52</PartNumber> 
+         <LineCode>ACD</LineCode> 
+        <OrderQty>1</OrderQty> 
+        <PartIdentifier>myPart1</PartIdentifier> 
+         </Part> 
+         <Part> 
+         <PartNumber>51515</PartNumber> 
+        <PartIdentifier>myPart2</PartIdentifier> 
+         </Part> 
+         </Parts> 
+         </JumpTab> 
+        </Request> 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <LaunchURL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 33
+      text: |-
+        4.8.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+         "JumpTab": { 
+         "Type": "stock", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "ACD", 
+        "LineCode": "PF52", 
+         "OrderQty": "1", 
+         "PartIdentifier": "myPart1" 
+         }, 
+        { 
+         "PartNumber": "51515", 
+         "PartIdentifier": "myPart2" 
+        }] 
+         } 
+         } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453 ", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 34
+      text: |-
+        4.9. Launch / Examples / Order Part (s) 
+        This example only applies to SMS integrations. 
+         
+        4.9.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+        <Identifier>JOB1210</Identifier> 
+        <JumpTab> 
+         <Type>ordercart</Type> 
+         <Parts> 
+         <Part> 
+         <PartNumber>PF52</PartNumber> 
+         <LineCode>ACD</LineCode> 
+        <OrderQty>1</OrderQty> 
+        <PartIdentifier>myPart1</PartIdentifier> 
+        <Price>5.43</Price> 
+        <BranchId>1000299</BranchId> 
+        <PONumber >PO12345</PONumber> 
+         </Part> 
+         <Part> 
+         <PartNumber>51515</PartNumber> 
+        <LineCode>WIX</LineCode> 
+        <OrderQty>3</OrderQty> 
+        <PartIdentifier>myPart2</PartIdentifier> 
+        <Price>12.11</Price> 
+        <BranchId>1001432</BranchId> 
+        <PONumber >PO98987</PONumber> 
+         </Part> 
+         </Parts> 
+         </JumpTab> 
+        </Request> 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <LaunchURL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response> 
+        4.9.2 JSON 
+         
+        {
+    - page: 35
+      text: |-
+        "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+         "JumpTab": { 
+         "Type": "ordercart", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "PF52", 
+        "LineCode": "ACD", 
+         "OrderQty": "1", 
+         "PartIdentifier": "myPart1", 
+        "Price": "5.43", 
+        "BranchId": "1000299", 
+        "PONumber": "PO12345" 
+         
+         }, 
+        { 
+         "PartNumber": "51515", 
+        "LineCode": "WIX", 
+         "OrderQty": "3", 
+         "PartIdentifier": "myPart2", 
+        "Price": "12.11", 
+        "BranchId": "1001432", 
+        "PONumber": "PO98987" 
+        }] 
+         } 
+         } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453 ", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 36
+      text: |-
+        4.10. Launch / Examples / Select Catalog Vehicle & Usg 
+         
+        4.10.1 XML 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+         <Identifier>JOB1210</Identifier> 
+         <CatalogType>A</CatalogType> 
+        <JumpTab> 
+         <Type>amcat</Type> 
+         <Vin>1G1PC5SBXE7253061</Vin> 
+        <Usg>16</Usg> 
+         </JumpTab> 
+        </Request> 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <LaunchURL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response> 
+         
+         
+         
+        4.10.2 JSON
+    - page: 37
+      text: |-
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+        "CatalogType": "A", 
+        "JumpTab": { 
+         "Type": "amcat", 
+        "Vin": "1G1PC5SBXE7253061", 
+        "Usg": "16" 
+         } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453 ", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 38
+      text: |-
+        4.11. Launch / Examples / Select Catalog Vehicle & ACES Part Type 
+         
+        4.11.1 XML 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+        <Identifier>JOB1210</Identifier> 
+         <CatalogType>A</CatalogType> 
+        <JumpTab> 
+         <Type>amcat</Type> 
+         <VehicleType>C</VehicleType> 
+         <VehicleId>2571</VehicleId> 
+         <EngineConfigId>1200</EngineConfigId> 
+        <PtType>C</PtType> 
+        <PtNumbers> 
+         <PtNumber>6192</PtNumber> 
+        </PtNumbers> 
+         </JumpTab> 
+        </Request> 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <Launch URL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 39
+      text: |-
+        4.11.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+        "CatalogType": "A", 
+        "JumpTab": { 
+         "Type": "amcat", 
+        "VehicleType": "C", 
+        "VehicleId": "2571", 
+        "EngineConfigId": "1200", 
+        "PtType": "C", 
+        "PtNumbers": { 
+         "PtNumber": [ "6192" ] 
+         } 
+         } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453 ", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 40
+      text: |-
+        4.12. Launch / Examples / Keyword (Smart Search) Lookup 
+         
+        4.12.1 XML 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+         <Identifier>JOB1210</Identifier> 
+         <CatalogType>A</CatalogType> 
+        <JumpTab> 
+         <Type>amcat</Type> 
+         <VehicleType>C</VehicleType> 
+         <VehicleId>2571</VehicleId> 
+         <EngineConfigId>1200</EngineConfigId> 
+         <SearchText>Engine Oil Filter</SearchText> 
+         </JumpTab> 
+        </Request> 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <Launch URL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 41
+      text: |-
+        4.12.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+        "CatalogType": "A", 
+        "JumpTab": { 
+         "Type": "amcat", 
+        "VehicleType": "C", 
+        "VehicleId": "2571", 
+        "EngineConfigId": "1200", 
+        "SearchText": "Engine Oil Filter" 
+         } 
+        } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 42
+      text: |-
+        4.13. Launch / Examples / Jump to Interchange Tab 
+         
+        4.12.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+         <Identifier>JOB1210</Identifier> 
+        <JumpTab> 
+         <Type>int</Type> 
+         <Parts> 
+         <Part> 
+         <PartNumber>PF52</PartNumber> 
+         <MfgCode>DCC</MfgCode> 
+         </Part> 
+         </Parts> 
+         </JumpTab> 
+        </Request> 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <Launch URL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 43
+      text: |-
+        4.13.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+        "CatalogType": "A", 
+        "JumpTab": { 
+         "Type": "int", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "ACD", 
+        "MfgCode": "DCC" 
+        }] 
+        } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 44
+      text: |-
+        4.14. Launch / Examples / Jump to Buyer’s Guide Tab 
+         
+         
+        4.14.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Launch</RequestType> 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+         <Username>abc</Username> 
+         <Password>pass</Password> 
+         <Identifier>JOB1210</Identifier> 
+        <JumpTab> 
+         <Type>bg</Type> 
+         <Parts> 
+         <Part> 
+         <PartNumber>PF52</PartNumber> 
+         <MfgCode>DCC</MfgCode> 
+         </Part> 
+         </Parts> 
+         </JumpTab> 
+        </Request> 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Launch</RequestType> 
+         <Success>1</Success> 
+        <ErrorCount>0</ErrorCount> 
+        <Launch URL>http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453</ LaunchURL> 
+         <ApiTokenKey>dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response>
+    - page: 45
+      text: |-
+        4.14.2 JSON 
+         
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Launch", 
+         "PartnerProviderKey": "ProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         “Identifier”: “JOB1210”, 
+        "CatalogType": "A", 
+        "JumpTab": { 
+         "Type": "bg", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "ACD", 
+        "MfgCode": "DCC" 
+        }] 
+        } 
+         } 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Launch", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "LaunchURL": "http://www.nexpart.com/launch.php?token=sfsaf5435dsgd66354453", 
+         "ApiTokenKey": "dsfggleddirt#rifgj9EaF" 
+         } 
+        }
+    - page: 46
+      text: |-
+        5. Cart or Order 
+        In this specification, the request has various required entities. The requests and responses are supported in both XML 
+        and JSON formats. 
+        There are 2 methods to retrieve cart / order contents 
+        • Pull Method: In this method, the contents of the cart are requested using the Order / Request method 
+        described below. As a response to this request, Nexpart returns back the response that includes all the i tems 
+        in the cart. 
+        • Push Method: Cart Contents are automatically posted to the integrator (same reply as the pull method) from 
+        Nexpart upon submission. This requires the integrator to listening to the WebPostURL sent at Launch. 
+        WebPostURL must be HTTPS. 
+        5.1 Cart or Order / Request / Details 
+        This request is only needed when WebPostURL is not set at launch or if the integrator chooses to pull the cart 
+        contents from their system directly. 
+        Request / 
+         Rev: This entity is required. This specifies Version of Spec integrated to 
+         ClientVersion: This entity is required. This specifies Version Number of Client (your) Software 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Cart” when 
+        trying to get the parts from Order Review. The value is “Order” when trying to get parts from a confirmed 
+        order. 
+        PartnerProviderKey: This entity is required. Security Key of the SMS, DMS or POS Provider or Id. This will be 
+        provided to you by WHI. 
+        ApiTokenKey: This entity is required. API Authorization Token received at launch to use for subsequent calls 
+        within the same session for the same user.
+    - page: 47
+      text: |-
+        5.1.1 Order / Request / Details / Quick Info 
+         
+        Request / 
+        Component Occurs Required Applies 
+        To 
+        Type Value(s) 
+        Rev 1..1 Yes SMS, DMS Decimal "4.0" 
+        ClientVersion 1..1 Yes SMS, DMS String System 
+        Defined 
+        RequestType 1..1 Yes SMS, DMS String “Cart” or 
+        "Order" 
+        PartnerProviderKey 1..1 Yes SMS, DMS String Will be 
+        Provided by 
+        WHI 
+        ApiTokenKey 0..1 Yes if no 
+        errors 
+        else No 
+        SMS, DMS String System 
+        Defined 
+         
+         
+        5.2 Cart or Order / Response / Details 
+        This reply is returned either as a response to the request query (pull method) or upon user action to push to the 
+        integrator. 
+        Response / 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Cart” when 
+        trying to get the parts from Order Review. The value is “Order” when trying to get parts from a confirmed 
+        order. 
+         Success: This entity is required. Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         ErrorCount: This entity is required. Numeric count of errors. If no errors value returned is 0. 
+         Errors / This entity is required only if ErrorCount > 0. 
+         ErrorCode: This entity is required. Short Error Code for the error. See appendix for more details. 
+         ErrorDesc: This entity is required. Detailed Error Description 
+         Header / 
+         AccountId: This entity is required. Unique number assigned by Distributor’s system 
+         CustomerName: This entity is required. Name of the customer from Distributor’s system
+    - page: 48
+      text: |-
+        OrderTotal: This entity is required. Total amount of an order from all branches 
+        (Your Price * Qty ) + ( Core Price * Qty ) 
+         Identifier: This entity is required. Identifier Passed at Launch 
+         Cart / This entity is optional 
+         BranchCart / This entity is required. List of Parts by each Branch 
+        Name: This entity is required. Particular warehouse/store/branch location from which the 
+        parts are being ordered. 
+        Id: This entity is required. Physical Branches will display the Id/Code of the Branch from 
+        Distributor’s system; For Virtual Branches - This element will not be included. 
+         
+        BranchId: Physical Branches will display the BranchId of the Branch from Distributor’s 
+        system; For Virtual Branches - This element will not be included. 
+         
+        VendorUsername: This entity is optional. Allows integrators to match seller specific 
+        credential configurations for Accounts Payable and Order Tracking purposes. 
+         
+         Total: This entity is required. Total amount of an order for the branch 
+        (Your Price * Qty ) + ( Core Price * Qty ) 
+         ListTotal: This entity is required. Total list amount of an order for the branch 
+        (Sell Price * Qty ) 
+         ItemCount: This entity is required. Total Item Count 
+         OrderType: This entity is optional. Order Type Code assigned by Distributor 
+         OrderTypeDesc: This entity is optional. Order Type Description for the branch order 
+         DeliveryMethod: This entity is optional. Default Delivery Code assigned by Distributor 
+        DeliveryMethodDesc: This entity is optional. Delivery Description for the default 
+        delivery code 
+        OrderHeader / This entity is optional and is sent when transferred after placing an order 
+        on Nexpart. This entity is valid only when RequestType is “Order”. 
+        OrderNumber: This entity is required. Order confirmation number from 
+        Distributor’s system 
+        State: This entity is optional. State of order. i.e., ordered, cancel or backord. 
+        Default is “ordered”. 
+         Discount This entity is optional. Any discount applicable to this order 
+         Taxes / This entity is optional. Types of taxes applicable for the order. 
+         Tax /
+    - page: 49
+      text: |-
+        Type: This entity is required. Possible values include general, vat, 
+        gst, pst 
+         Amount: This entity is required. Amount of tax 
+         ErrorCode: This entity is required. Error Code of the order 
+         ErrorMsg: This entity is optional. Error Message if any. 
+         PONumber: This entity is required. PO Number on the order 
+         Comments / This entity is optional. 
+         Comment / 
+        Type: This entity is required. Comment Types can be either 
+        General or Vehicle. 
+         Text: This entity is required. Comment Text 
+         Parts / This entity is required. 
+         Part / 
+        PartNumber: This entity is required. This attribute, along with the 
+        linecode, is the unique identifier for this individual part, at this distributor. 
+        LineCode: This entity is required. Distributor’s line code for the part above 
+         SellerPartDesc: This entity is optional. Seller Description of the part. 
+        CatalogPartDesc: This entity is optional. Catalog Description of the part. 
+        CatalogFootNotes: This entity is optional. Additional catalog notes for the 
+        part. Includes Position, Years, Per Vehicle and General Notes. 
+        MfgCode: This entity is required. WHI Catalog based manufacturer code 
+        for each manufacturer 
+        SmartpageURL: This entity is optional. Smart Page link of the part. 
+         
+        OrderQty: This entity is required. Quantity that is being requested 
+         
+        PartIdentifier: This entity is optional. Part Identifier code. Returned back 
+        as-is if one is sent at Launch 
+        AvailableQty: This entity is required. Available quantity at the distributor 
+        branch. Nexpart will provide the distributor with the ability to show actual 
+        quantity available. 
+         Mdse: This entity is required. Cost of the requested part. 
+         List: This entity is required. List price of the requested part.
+    - page: 50
+      text: |-
+        Core: This entity is optional. Core charge of the requested part. Default is 
+        0.00 
+        Uom: This entity is optional. Unit of Measure of the requested part. 
+        Default is “ea” 
+         PackQty: This entity is optional. Pack Qty of the part. Default is 1. 
+         PartType: This entity is optional. Part type value from the catalog. 
+        ItemType: This entity is optional. Type of part. Values: P = Part, 
+        R = Recycled Part, T = Tire 
+        TireDetails: This entity is optional. Contains tire information for tires. 
+        TireWidth, TireRatio, TireRim, TireSize, TreadDepth, SpeedRating, 
+        SpeedRatingDesc, TireCategory, AddonCategory, TireClass, LoadRange, 
+        Warranty, WarrantyDesc, RunFlat, Sidewall, LoadIndex, LoadIndexDesc, 
+        UTQG, UTQGBreakdown, URL, RebateURL, OEM 
+        VehicleId: This entity is optional. Base Vehicle Id if parts are ordered from 
+        Catalog screen. The id can be either an ACES Base Vehicle Id or a Legacy 
+        Vehicle Id. The type of Id returned is control by the CatalogType launch 
+        input parameter. 
+        WHIEngineConfigId: This entity is optional. WHI EngineConfig Id if 
+        VehicleId output is ACES and if the user selected one 
+        SubmodelId: This entity is optional. Submodel if VehicleId output is ACES 
+        and if the user selected one 
+        VehicleDesc: This entity is optional. Vehicle description displayed for this 
+        catalog search. 
+        TransactionCode: This entity is optional and represents the DMS 
+        transaction code to assign when user updated item details. 
+        OrderDetails / This entity is optional. Returned when user is on the 
+        confirmation screen after placing an order with the DMS on Nexpart. This 
+        entity is valid only when RequestType is “Order”. 
+         
+        ShipQty: This entity is required. Quantity shipped by the 
+        warehouse 
+        ErrorCode: This entity is required. ErrorCode if any for the part 
+        ErrorMsg: This entity is optional. ErrorMessage if any for the part 
+        LaborCart / This entity is optional. This element describes the details of a list of labor records. 
+        This section is subject to change and is for draft only. Live Cart option not available for Labor.
+    - page: 51
+      text: |-
+        Labor / 
+        Group: This entity is optional. Group: i.e., AIR BY-PASS VALVE- REMOVE & 
+        REPLACE 
+         Hours: This entity is optional. Hours: hr.mn 
+         Skill: This entity is optional. Skill Values can be either A, B, C, D 
+         Component: This entity is optional. Component operation 
+        VehicleId: This entity is optional. Base Vehicle Id if parts are ordered from Catalog 
+        screen. The id can be either an ACES Base Vehicle Id or a Legacy Vehicle Id. The 
+        type of Id returned is control by the CatalogType launch input parameter. 
+        WHIEngineConfigId: This entity is optional. WHI EngineConfig Id if VehicleId output 
+        is ACES and if the user selected one 
+        SubmodelId: This entity is optional. Submodel if VehicleId output is ACES and if the 
+        user selected one 
+        VehicleDesc: This entity is optional. Vehicle description displayed for this catalog 
+        search. 
+        SpecCart / This entity is optional. This element describes the details of a list of specification 
+        records. This section is subject to change and is for draft only. Live Cart option not available for 
+        specifications. 
+         
+         Spec / 
+        Type: This entity is optional. Type of specification that is displayed. See Appendix 
+        for spec types. 
+        TypeDesc: This entity is optional. Text description of the type of specification that 
+        is displayed 
+         Desc: This entity is optional. Text description of the specification 
+         Value: This entity is optional. Value of the specification 
+         SmartpageURL: This entity is optional. Smart Page link of the specification. 
+         
+        VehicleId: This entity is optional. Base Vehicle Id if parts are ordered from Catalog 
+        screen. The id can be either an ACES Base Vehicle Id or a Legacy Vehicle Id. The 
+        type of Id returned is control by the CatalogType launch input parameter. 
+        WHIEngineConfigId: This entity is optional. WHI EngineConfig Id if VehicleId output 
+        is ACES and if the user selected one 
+        SubmodelId: This entity is optional. Submodel if VehicleId output is ACES and if the 
+        user selected one
+    - page: 52
+      text: |-
+        VehicleDesc: This entity is optional. Vehicle description displayed for this catalog 
+        search. 
+        PMCart / This entity is optional. This element describes the details of a list of preventive 
+        maintenance records. This section is subject to change and is for draft only. Live Cart option not 
+        available for specifications. 
+         
+         PM / 
+         Mileage: This entity is optional. Mileage of the PM item 
+         Group: This entity is optional. Preventive Maintenance Group 
+         Action: This entity is optional. Maintenance Action 
+         Desc: This entity is optional. Preventive Maintenance Item Description 
+         Frequency: This entity is optional. Frequency of Maintenance 
+         Severity: This entity is optional. Severity: e.g., N-Normal | S-Severe | B-Both 
+        VehicleId: This entity is optional. Base Vehicle Id if parts are ordered from Catalog 
+        screen. The id can be either an ACES Base Vehicle Id or a Legacy Vehicle Id. The 
+        type of Id returned is control by the CatalogType launch input parameter. 
+        WHIEngineConfigId: This entity is optional. WHI EngineConfig Id if VehicleId output 
+        is ACES and if the user selected one 
+        SubmodelId: This entity is optional. Submodel if VehicleId output is ACES and if the 
+        user selected one 
+        VehicleDesc: This entity is optional. Vehicle description displayed for this catalog 
+        search. 
+         
+        5.2.1 Order / Response / Details / Quick Info 
+         
+        Response / 
+        Component Occurs Required Applies To Type Value(s) 
+        RequestType 1..1 Yes SMS, DMS String “Cart” or 
+        "Order" 
+        Success 1..1 Yes SMS, DMS Bit 1 or 0 
+        ErrorCount 1..1 Yes SMS, DMS Integer System 
+        Defined
+    - page: 53
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Errors 0..1 Yes if 
+        errors else 
+        No 
+        SMS, DMS - - 
+        Errors→Error 1..* Yes if 
+        errors else 
+        No 
+        SMS, DMS - - 
+        Errors→Error → ErrorCode 1..1 Yes if 
+        errors else 
+        No 
+        SMS, DMS Integer See appendix 
+        Errors→Error → ErrorDesc 1..1 Yes if 
+        errors else 
+        No 
+        SMS, DMS String See appendix 
+        Header 1..1 Yes SMS, DMS - - 
+        Header→AccountId 1..1 Yes SMS, DMS String System 
+        Defined 
+        Header→CustomerName 1..1 Yes SMS, DMS String System 
+        Defined 
+        Header→ OrderTotal 1..1 Yes SMS, DMS Decimal - 
+        Header→ Identifier 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart 0..1 No SMS, DMS - - 
+        Cart →BranchCart 0..* Yes SMS, DMS - - 
+        Cart →BranchCart →Name 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart →BranchCart →Id 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart →BranchCart →VendorUsername 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →BranchCart → Total 1..1 Yes SMS, DMS Decimal System 
+        Defined 
+        Cart →BranchCart → ItemCount 1..1 Yes SMS, DMS Integer System 
+        Defined 
+        Cart →BranchCart → OrderType 0..1 No SMS, DMS String System 
+        Defined
+    - page: 54
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Cart →BranchCart → OrderTypeDesc 0..1 No SMS, DMS String System 
+        Defined 
+        Cart →BranchCart → DeliveryMethod 0..1 No SMS, DMS String System 
+        Defined 
+        Cart →BranchCart → DeliveryMethodDesc 0..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        OrderNumber 
+        0..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        State 
+        0..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        Discount 
+        0..1 No SMS Decimal System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        Taxes 
+        0..1 No SMS - - 
+        Cart → BranchCart → OrderHeader → 
+        Taxes → Tax 
+        0..1 No SMS - - 
+        Cart → BranchCart → OrderHeader → 
+        Taxes → Tax → Type 
+        0..1 No SMS String "general" or 
+        "vat" or "gst" 
+        or "pst" 
+        Cart → BranchCart → OrderHeader → 
+        Taxes → Tax → Amount 
+        0..1 No SMS Decimal System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        ErrorCode 
+        1..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        ErrorMsg 
+        1..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        PONumber 
+        1..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → OrderHeader → 
+        Comments 
+        0..1 No SMS - - 
+        Cart → BranchCart → OrderHeader → 
+        Comments → Comment 
+        0..* No SMS 
+        Cart → BranchCart → OrderHeader → 
+        Comments → Comment → Type 
+        1..1 No SMS String "general" or 
+        "vehicle" 
+        Cart → BranchCart → OrderHeader → 
+        Comments → Comment → Text 
+        1..1 No SMS String System 
+        Defined 
+        Cart → BranchCart → Parts 1..1 No SMS, DMS - -
+    - page: 55
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Cart → BranchCart → Parts → Part 0..* Yes SMS, DMS - - 
+        Cart → BranchCart → Parts → Part → PartNumber 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → LineCode 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → SellerPartDesc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → CatalogPartDesc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → CatalogFootNotes 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → MfgCode 1..1 Yes SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → OrderQty 1..1 Yes SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → PartIdentifier 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → AvailableQty 1..1 Yes SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → Mdse 1..1 Yes SMS, DMS Decimal System 
+        Defined 
+        Cart → BranchCart → Parts → Part → List 1..1 Yes SMS, DMS Decimal System 
+        Defined 
+        Cart → BranchCart → Parts → Part → Core 1..1 No SMS, DMS Decimal System 
+        Defined 
+        Cart → BranchCart → Parts → Part → Uom 1..1 No SMS, DMS String See Appendix 
+        Cart → BranchCart → Parts → Part → PackQty 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → PartType 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → ItemType 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → TireDetails 1..1 No SMS, DMS String System 
+        Defined
+    - page: 56
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Cart → BranchCart → Parts → Part → VehicleId 1..1 No SMS, DMS Interger System 
+        Defined 
+        Cart → BranchCart → Parts → Part → WHIEngineConfigId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → SubmodelId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → VehicleDesc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → TransactionCode 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → OrderDetails 1..1 No SMS - - 
+        Cart → BranchCart → Parts → Part → OrderDetails → 
+        ShipQty 
+        1..1 Yes SMS Integer System 
+        Defined 
+        Cart → BranchCart → Parts → Part → OrderDetails → 
+        ErrorCode 
+        1..1 Yes SMS String System 
+        Defined 
+        Cart → BranchCart → Parts → Part → OrderDetails → 
+        ErrorMsg 
+        1..1 No SMS String System 
+        Defined 
+        Cart → LaborCart 1..1 No SMS, DMS - - 
+        Cart → LaborCart → Labor 1..1 No SMS, DMS - - 
+        Cart → LaborCart → Labor → Group 1..1 No SMS, DMS String - 
+        Cart → LaborCart → Labor → Skill 1..1 No SMS, DMS String "A" or "B" or 
+        "C" or "D" 
+        Cart → LaborCart → Labor → Component 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → LaborCart → Labor → VehicleId 1..1 No SMS, DMS Interger System 
+        Defined 
+        Cart → LaborCart → Labor → WHIEngineConfigId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → LaborCart → Labor → SubmodelId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → LaborCart → Labor → VehicleDesc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → SpecCart 1..1 No SMS, DMS - -
+    - page: 57
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Cart → SpecCart → Type 1..1 No SMS, DMS Integer See Appendix 
+        Cart → SpecCart → TypeDesc 1..1 No SMS, DMS String See Appendix 
+        Cart → SpecCart → Desc 1..1 No SMS, DMS String See Appendix 
+        Cart → SpecCart → Value 1..1 No SMS, DMS String System 
+        Defined 
+        Cart → SpecCart → SmartpageURL 1..1 No SMS, DMS URI System 
+        Defined 
+        Cart → SpecCart → VehicleId 1..1 No SMS, DMS Interger System 
+        Defined 
+        Cart → SpecCart → WHIEngineConfigId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → SpecCart → SubmodelId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart → SpecCart → VehicleDesc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →PMCart 1..1 No SMS, DMS - - 
+        Cart →PMCart → PM 1..1 No SMS, DMS - - 
+        Cart →PMCart → PM → Mileage 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart →PMCart → PM → Group 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →PMCart → PM → Action 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →PMCart → PM → Desc 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →PMCart → PM → Frequency 1..1 No SMS, DMS String System 
+        Defined 
+        Cart →PMCart → PM → Severity 1..1 No SMS, DMS String "N" or "S" or 
+        "B" 
+        Cart →PMCart → PM → VehicleId 1..1 No SMS, DMS Interger System 
+        Defined 
+        Cart →PMCart → PM → WHIEngineConfigId 1..1 No SMS, DMS Integer System 
+        Defined
+    - page: 58
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        Cart →PMCart → PM → SubmodelId 1..1 No SMS, DMS Integer System 
+        Defined 
+        Cart →PMCart → PM → VehicleDesc 1..1 No SMS, DMS String System 
+        Defined 
+         
+         
+         
+         
+        5.3 Cart or Order / Request / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+        Version of Spec integrated to * Required 
+         <Rev>4.0</Rev> 
+        Version Number of Client (your) Software * Required 
+         <ClientVersion>2.6</ClientVersion> 
+        Type of Request. For this type of transaction the value is “Cart” or “Order” * Required 
+         <RequestType>Order</RequestType> 
+        Partner key assigned to SMS, DMS or POS Provider * Required 
+         <PartnerProviderKey>MyProviderKey</ PartnerProviderKey> 
+        API Token Key provided from the Launch Response * Required 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Request> 
+         
+        5.4 Cart or Order / Response / XML 
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        Type of Request. For this type of transaction the value is “Cart” or “Order” * Required 
+         <RequestType>Order</RequestType> 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         <Success></Success> 
+        Numeric count of errors. If no errors value returned is 0.
+    - page: 59
+      text: |-
+        <ErrorCount></ErrorCount> 
+        Returned when the error count > 0. 
+        <Errors> 
+         <Error> 
+        Short Error Code for the error. 
+         <ErrorCode></ErrorCode> 
+        Detailed Error Description 
+         <ErrorDesc></ErrorDesc> 
+         </Error> 
+         </Errors> 
+         <Header> 
+        Unique number assigned by Distributor’s system 
+         <AccountId></AccountId> 
+        Name of the customer from Distributor’s system 
+         <CustomerName></CustomerName> 
+        Total amount of an order from all branches 
+        (Your Price * Qty ) + ( Core Price * Qty ) 
+         <OrderTotal></OrderTotal> 
+        Identifier Passed at Launch 
+         <Identifier></Identifier> 
+         </Header> 
+         <Cart> 
+        List of Parts by each Branch 
+         <BranchCart> 
+        Particular warehouse/store/branch location from which the parts are being ordered. 
+         <Name></Name> 
+        Id/Code for the Branch from Distributor’s system 
+         <Id></Id> 
+        Username for the seller. 
+         <VendorUsername></VendorUsername> 
+        Total amount of an order for the branch 
+        (Your Price * Qty ) + ( Core Price * Qty ) 
+         <Total></Total> 
+        Total list amount of an order for the branch 
+        (Sell Price * Qty ) 
+         <ListTotal></ListTotal> 
+        Total Item Count
+    - page: 60
+      text: |-
+        <ItemCount></ItemCount> 
+        Order Type Code assigned by Distributor 
+         <OrderType></OrderType> 
+        Order Type Description for the branch order 
+         <OrderTypeDesc></OrderTypeDesc> 
+        Default Delivery Code assigned by Distributor 
+         <DeliveryMethod></DeliveryMethod> 
+        Delivery Description for the default delivery code 
+         <DeliveryMethodDesc></DeliveryMethodDesc> 
+        <OrderHeader> 
+        Order confirmation number from Distributor’s system 
+         <OrderNumber></OrderNumber> 
+        State of order. i.e., ordered, cancel or backord 
+         <State></State> 
+        Any discount applicable to this order 
+         <Discount></Discount> 
+        Types of taxes applicable for the order. 
+        <Taxes> 
+         <Tax> 
+        Possible values include general, vat, gst, pst 
+         <Type></Type> 
+        Amount of tax 
+         <Amount></Amount> 
+         </Tax> 
+         </Taxes> 
+        Error Code of the order 
+         <ErrorCode></ErrorCode> 
+        Error Message 
+         <ErrorMsg></ErrorMsg> 
+        PO Number 
+         <PONumber></PONumber> 
+        Comments on the order 
+         <Comments> 
+         <Comment> 
+        Comment Type 
+         <Type></Type>
+    - page: 61
+      text: |-
+        Comment Text 
+         <Text></Text> 
+         </Comment> 
+         </Comments> 
+        </OrderHeader> 
+         <Parts> 
+         <Part> 
+        This attribute, along with the linecode, is the unique identifier for this individual part, 
+        at this distributor. 
+         <PartNumber></PartNumber> 
+        Distributor’s line code for the part above 
+         <LineCode></LineCode> 
+        Seller Description of the part. 
+         <SellerPartDesc></SellerPartDesc> 
+        Catalog Description of the part. 
+        <CatalogPartDesc></CatalogPartDesc> 
+        Catalog FootNotes for the part. 
+        <CatalogFootNotes></CatalogFootNotes> 
+        WHI Catalog based manufacturer code for each manufacturer 
+         <MfgCode></MfgCode> 
+        Quantity that is being requested 
+         <OrderQty></OrderQty> 
+        Part Identifier code. Returned back as-is if one is sent at Launch 
+         <PartIdentifier></PartIdentifier> 
+        Available quantity at the distributor branch. Nexpart will provide the distributor with 
+        the ability to show actual quantity available. 
+         <AvailableQty></AvailableQty> 
+        Cost of the requested part. 
+         <Mdse></Mdse> 
+        List price of the requested part. 
+         <List></List> 
+        Core charge of the requested part. 
+         <Core></Core> 
+        Unit of Measure of the requested part. Default is “ea” 
+        <Uom></Uom> 
+        Pack Qty of the part. Default is 1. 
+        <PackQty></PackQty>
+    - page: 62
+      text: |-
+        Part type value from the catalog. 
+         <PartType></PartType> 
+        Item type value. P=Part, R = Recycled Part, T = Tire 
+         <ItemType></ItemType> 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES 
+        Base Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the 
+        CatalogType launch input parameter. 
+         <VehicleId></VehicleId> 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         <WHIEngineConfigId></WHIEngineConfigId> 
+        Submodel if VehicleId output is ACES and if the user selected one 
+         <SubmodelId></SubmodelId> 
+        Vehicle description displayed for this catalog search. 
+         <VehicleDesc></VehicleDesc> 
+        Represents the DMS transaction code to assign when user updated item details. 
+         <TransactionCode></TransactionCode> 
+        Returned when user is on the confirmation screen after placing an order with the DMS 
+         <OrderDetails> 
+        Quantity shipped by the warehouse 
+         <ShipQty></ShipQty> 
+        ErrorCode if any for the part 
+        <ErrorCode></ErrorCode> 
+        ErrorMessage if any for the part 
+         <ErrorMsg></ErrorMsg> 
+         </OrderDetails> 
+         </Part> 
+         </Parts> 
+         </BranchCart> 
+        This element describes the details of a list of labor records. This section is subject to change and is for draft only. 
+         <LaborCart> 
+         <Labor> 
+        Group: i.e., AIR BY-PASS VALVE- REMOVE & REPLACE 
+         <Group></Group> 
+        Hours: hr.mn 
+         <Hours></Hours> 
+        Skill - A, B, C, D 
+         <Skill></Skill>
+    - page: 63
+      text: |-
+        Component operation: Wiring Diagram Fast Idle 
+         <Component></Component> 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES Base 
+        Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the CatalogType launch 
+        input parameter. 
+         <VehicleId></VehicleId> 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         <WHIEngineConfigId></WHIEngineConfigId> 
+        Submodel if VehicleId output is ACES and if the user selected one 
+         <SubmodelId></SubmodelId> 
+        Vehicle description displayed for this catalog search. 
+         <VehicleDesc></VehicleDesc> 
+         </Labor> 
+         </LaborCart> 
+        This element describes the details of a list of specification records. This section is subject to change and is for draft only. 
+         <SpecCart> 
+         <Spec> 
+        Type of specification that is displayed. See Appendix for spec types. 
+         <Type></Type> 
+        Text description of the type of specification that is displayed 
+         <TypeDesc></TypeDesc> 
+        Text description of the specification 
+         <Desc></Desc> 
+        Value of the specification 
+         <Value></Value> 
+        Smart Page link of the specification. 
+         <SmartpageURL></SmartpageURL> 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES Base 
+        Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the CatalogType launch 
+        input parameter. 
+         <VehicleId></VehicleId> 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         <WHIEngineConfigId></WHIEngineConfigId> 
+        Submodel if VehicleId output is ACES and if the user selected one 
+         <SubmodelId></SubmodelId> 
+        Vehicle description displayed for this catalog search. 
+         <VehicleDesc></VehicleDesc> 
+         </Spec>
+    - page: 64
+      text: |-
+        </SpecCart> 
+        This element describes the details of a list of preventive maintenance records. This section is subject to change and is 
+        for draft only. 
+         <PMCart> 
+         <PM> 
+        Mileage of the PM item 
+         <Mileage></Mileage> 
+        Preventive Maintenance Group 
+         <Group></Group> 
+        Maintenance Action 
+         <Action></Action> 
+        Preventive Maintenance Item Description 
+         <Desc></Desc> 
+        Frequency of Maintenance 
+         <Frequency></Frequency> 
+        Severity: e.g., N-Normal | S-Severe | B-Both 
+         <Severity></Severity> 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES Base 
+        Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the CatalogType launch 
+        input parameter. 
+         <VehicleId></VehicleId> 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         <WHIEngineConfigId></WHIEngineConfigId> 
+        Submodel if VehicleId output is ACES and if the user selected one 
+         <SubmodelId></SubmodelId> 
+        Vehicle description displayed for this catalog search. 
+         <VehicleDesc></VehicleDesc> 
+         </PM> 
+         </PMCart> 
+         </Cart> 
+        </Response>
+    - page: 65
+      text: |-
+        5.5 Cart or Order / Request / JSON 
+         
+        { 
+         "Request": { 
+        Version of Spec integrated to * Required 
+         "Rev": "4.0", 
+        Version Number of Client (your) Software * Required 
+         "ClientVersion": "2.6", 
+        Type of Request. For this type of transaction the value is “Order” or “Cart” * Required 
+         "RequestType": "Order", 
+        Partner Key assigned to the SMS, DMS or POS * Required 
+         "PartnerProviderKey": "MyProviderKey", 
+        API Authorization Token to use for subsequent calls within the same session for the same user. * Required 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+        } 
+        5.6 Cart or Order / Response / JSON 
+        { 
+         "Response": { 
+        Type of Request. For this type of transaction the value is “Order” or “Cart” * Required 
+         "RequestType": "Order", 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         "Success": "",
+    - page: 66
+      text: |-
+        Numeric count of errors. If no errors value returned is 0. 
+         "ErrorCount": "", 
+         "Errors": { 
+         "Error": [{ 
+        Short Error Code for the error. 
+         "ErrorCode": "", 
+        Detailed Error Description 
+         "ErrorDesc": "" 
+         }] 
+         }, 
+         "Header": { 
+        Unique number assigned by Distributor’s system 
+         "AccountId": "", 
+        Name of the customer from Distributor’s system 
+         "CustomerName": "", 
+        Total amount of an order from all branches (Your Price * Qty ) + ( Core Price * Qty ) 
+         "OrderTotal": "", 
+        Identifier Passed at Launch 
+         "Identifier": "" 
+         }, 
+         "Cart": { 
+        List of Parts by each Branch 
+         "BranchCart": { 
+        Particular warehouse/store/branch location from which the parts are being ordered. 
+         "Name": "", 
+        Id/Code for the Branch from Distributor’s system 
+         "Id": "", 
+        Username for the seller. 
+         "VendorUsername": "", 
+        Total amount of an order for the branch 
+        (Your Price * Qty ) + ( Core Price * Qty ) 
+         "Total": "", 
+        Total list amount of an order for the branch 
+        (Sell Price * Qty ) 
+         "ListTotal": "", 
+        Total Item Count
+    - page: 67
+      text: |-
+        "ItemCount": "", 
+        Order Type Code assigned by Distributor 
+         "OrderType": "", 
+        Order Type Description for the branch order 
+         "OrderTypeDesc": "", 
+        Default Delivery Code assigned by Distributor 
+         "DeliveryMethod": "", 
+        Delivery Description for the default delivery code 
+         "DeliveryMethodDesc": "", 
+        Returned when user is on the confirmation screen after placing an order with the DMS 
+        "OrderHeader": { 
+        Order confirmation number from Distributor’s system 
+         "OrderNumber": "", 
+        State of order. i.e., ordered, cancel or backord 
+         "State": "", 
+        Any discount applicable to this order 
+         "Discount": "", 
+        Types of taxes applicable for the order. 
+         "Taxes": { 
+         "Tax": [{ 
+        Possible values include general, vat, gst, pst 
+         "Type": "", 
+        Amount of tax 
+         "Amount": "" 
+         }] 
+         }, 
+        Error Code of the order 
+         "ErrorCode": "", 
+        Error Message 
+         "ErrorMsg": "", 
+        PO Number 
+         "PONumber": "", 
+        Comments on the order 
+         "Comments": { 
+         "Comment": [{ 
+        Comment Type
+    - page: 68
+      text: |-
+        "Type": "", 
+        Comment Text 
+         "Text": "" 
+         }] 
+         } 
+         }, 
+         "Parts": { 
+         "Part": [{ 
+        This attribute, along with the linecode, is the unique identifier for this 
+        individual part, at this distributor. 
+         "PartNumber": "", 
+        Distributor’s line code for the part above 
+         "LineCode": "", 
+        Seller Description of the part. 
+        "SellerPartDesc": "", 
+        Catalog Description of the part. 
+        "CatalogPartDesc": "", 
+        Catalog FootNotes for the part. 
+        "CatalogFootNotes": "", 
+        WHI Catalog based manufacturer code for each manufacturer 
+         "MfgCode": "", 
+        Quantity that is being requested 
+         "OrderQty": "", 
+        Part Identifier code. Returned back as-is if one is sent at Launch 
+         "PartIdentifier": "", 
+        Available quantity at the distributor branch. Nexpart will provide the 
+        distributor with the ability to show actual quantity available. 
+         "AvailableQty": "", 
+        Cost of the requested part. 
+         "Mdse": "", 
+        List price of the requested part. 
+         "List": "", 
+        Core charge of the requested part. 
+         "Core": "", 
+        Unit of Measure of the requested part. Default is “ea” 
+         "Uom": "", 
+        Pack Qty of the part. Default is 1.
+    - page: 69
+      text: |-
+        "PackQty": "", 
+        Part type value from the catalog. 
+         "PartType": "", 
+        Item type value. P = Part, R = Recycled, T = Tire 
+         "ItemType": "", 
+        TireDetails - Additional Tire Information 
+         "TireDetails": "", 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be 
+        either an ACES Base Vehicle Id or a Legacy Vehicle Id. The type of Id 
+        returned is control by the CatalogType launch input parameter. 
+         "VehicleId": "", 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         "WHIEngineConfigId": "", 
+        Submodel if VehicleId output is ACES and if the user selected one 
+         "SubmodelId": "", 
+        Vehicle description displayed for this catalog search. 
+         "VehicleDesc": "", 
+        Represents the DMS transaction code to assign when user updated item 
+        details. 
+         "TransactionCode": "", 
+        Returned when user is on the confirmation screen after placing an order 
+        with the DMS 
+        "OrderDetails": { 
+        Quantity shipped by the warehouse 
+         "ShipQty": "", 
+        ErrorCode if any for the part 
+        "ErrorCode": "", 
+        ErrorMessage if any for the part 
+        "ErrorMsg": "" 
+         } 
+         }] 
+         } 
+         }, 
+        This element describes the details of a list of labor records. This section is subject to change and is for draft 
+        only. 
+         "LaborCart": { 
+         "Labor": [{ 
+        Group: i.e., AIR BY-PASS VALVE- REMOVE & REPLACE
+    - page: 70
+      text: |-
+        "Group": "", 
+        Hours: hr.mn 
+         "Hours": "", 
+        Skill - A, B, C, D 
+         "Skill": "", 
+        Component operation: Wiring Diagram Fast Idle 
+         "Component": "", 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES 
+        Base Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the 
+        CatalogType launch input parameter. 
+         "VehicleId": "", 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         "WHIEngineConfigId": "", 
+        ubmodel if VehicleId output is ACES and if the user selected one 
+         "SubmodelId": "", 
+        Vehicle description displayed for this catalog search. 
+         "VehicleDesc": "" 
+         }] 
+         }, 
+        This element describes the details of a list of specification records. This section is subject to change and is 
+        for draft only. 
+         "SpecCart": { 
+         "Spec": [{ 
+        Type of specification that is displayed. See Appendix for spec types. 
+         "Type": "", 
+        Text description of the type of specification that is displayed 
+         "TypeDesc": "", 
+        Text description of the specification 
+         "Desc": "", 
+        Value of the specification 
+         "Value": "", 
+        Smart Page link of the specification. 
+         "SmartpageURL": "", 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES 
+        Base Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the 
+        CatalogType launch input parameter. 
+         "VehicleId": "", 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         "WHIEngineConfigId": "",
+    - page: 71
+      text: |-
+        ubmodel if VehicleId output is ACES and if the user selected one 
+         "SubmodelId": "", 
+        Vehicle description displayed for this catalog search. 
+         "VehicleDesc": "" 
+         }] 
+         }, 
+        This element describes the details of a list of preventive maintenance records. This section is subject to 
+        change and is for draft only. 
+         "PMCart": { 
+         "PM": [{ 
+        Mileage of the PM item 
+         "Mileage": "", 
+        Preventive Maintenance Group 
+         "Group": "", 
+        Maintenance Action 
+         "Action": "", 
+        Preventive Maintenance Item Description 
+         "Desc": "", 
+        Frequency of Maintenance 
+         "Frequency": "", 
+        Severity: e.g., N-Normal | S-Severe | B-Both 
+         "Severity": "", 
+        Base Vehicle Id if parts are ordered from Catalog screen. The id can be either an ACES 
+        Base Vehicle Id or a Legacy Vehicle Id. The type of Id returned is control by the 
+        CatalogType launch input parameter. 
+         "VehicleId": "", 
+        EngineConfig Id if VehicleId output is ACES and if the user selected one 
+         "WHIEngineConfigId": "", 
+        ubmodel if VehicleId output is ACES and if the user selected one 
+         "SubmodelId": "", 
+        Vehicle description displayed for this catalog search. 
+         "VehicleDesc": "" 
+         }] 
+         } 
+         } 
+         } 
+        }
+    - page: 72
+      text: |-
+        5.7 Cart / Examples / Parts 
+         
+         
+        5.7.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Cart</RequestType> 
+         <PartnerProviderKey>MyProviderKey</ PartnerProviderKey> 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Request> 
+         
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Cart</RequestType> 
+         <Success></Success> 
+        <ErrorCount></ErrorCount> 
+         <Header> 
+         <AccountId>29</AccountId> 
+         <CustomerName>WHI Garage Shop</CustomerName> 
+         <OrderTotal>22.70</OrderTotal> 
+         <Identifier>whi002</Identifier> 
+         </Header> 
+         <Cart> 
+         <BranchCart> 
+         <Name>New York</Name> 
+         <Id>100076</Id> 
+         <VendorUsername>mylogin</VendorUsername> 
+         <Total>22.70</Total> 
+         <ListTotal>33.60</ListTotal>
+    - page: 73
+      text: |-
+        <ItemCount>1</ItemCount> 
+         <OrderType>NRML</OrderType> 
+         <OrderTypeDesc>Normal</OrderTypeDesc> 
+         <DeliveryMethod>FDX</DeliveryMethod> 
+         <DeliveryMethodDesc>FedEx</DeliveryMethodDesc> 
+         <Parts> 
+         <Part> 
+         <PartNumber>A3154C</PartNumber> 
+         <LineCode>ACD</LineCode> 
+         <SellerPartDesc>Air Filter</SellerPartDesc> 
+         <CatalogPartDesc>Air Filter</CatalogPartDesc> 
+         <MfgCode>DCC</MfgCode> 
+         <OrderQty>2</OrderQty> 
+         <PartIdentifier></PartIdentifier> 
+         <AvailableQty>20</AvailableQty> 
+         <Mdse>11.35</Mdse> 
+         <List>16.80</List> 
+         <Core>0.00</Core> 
+         <PartType>6192</PartType> 
+         <ItemType>P</ItemType> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127</VehicleDesc> 
+         </Part> 
+         </Parts> 
+         </BranchCart> 
+         </Cart> 
+        </Response> 
+         
+         
+        5.7.2 JSON 
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Cart", 
+         "PartnerProviderKey": "MyProviderKey", 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Cart", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "Header": { 
+         "AccountId": "29", 
+         "CustomerName": "WHI Garage Shop", 
+         "OrderTotal": "22.70", 
+         "Identifier": "whi002"
+    - page: 74
+      text: |-
+        }, 
+         "Cart": { 
+         "BranchCart": { 
+         "Name": "New York", 
+         "Id": "100076", 
+        "VendorUsername": "mylogin", 
+         
+         "Total": "22.70", 
+         "ListTotal": "33.60", 
+         "ItemCount": "1", 
+        "OrderType": "NRML", 
+        "OrderTypeDesc": "Normal", 
+         "DeliveryMethod": "FDX", 
+         "DeliveryMethodDesc": "FedEx", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "A3154C", 
+         "LineCode": "ACD", 
+        "SellerPartDesc": "Air Filter", 
+        "CatalogPartDesc": "Air Filter", 
+         "MfgCode": "DCC", 
+         "OrderQty": "2", 
+         "PartIdentifier": "", 
+         "AvailableQty": "20", 
+         "Mdse": "11.35", 
+         "List": "16.80", 
+         "Core": "0.00", 
+         "PartType": "6192", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "", 
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127" 
+         }] 
+         } 
+         } 
+         
+         } 
+         } 
+        }
+    - page: 75
+      text: |-
+        5.8 Cart / Examples / Parts, Labor & Specifications (optional) 
+         
+         
+        5.8.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Cart</RequestType> 
+         <PartnerProviderKey>MyProviderKey</ PartnerProviderKey> 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Request> 
+         
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Cart</RequestType> 
+         <Success></Success> 
+        <ErrorCount></ErrorCount> 
+         <Header> 
+         <AccountId>29</AccountId> 
+         <CustomerName>WHI Garage Shop</CustomerName> 
+         <OrderTotal>22.70</OrderTotal> 
+         <Identifier>whi002</Identifier> 
+         </Header> 
+         <Cart> 
+         <BranchCart> 
+         <Name>New York</Name> 
+         <Id>100076</Id> 
+        <VendorUsername>mylogin</VendorUsername> 
+         <Total>22.70</Total> 
+         <ListTotal>33.60</ListTotal> 
+         <ItemCount>1</ItemCount>
+    - page: 76
+      text: |-
+        <OrderType>NRML</OrderType> 
+         <OrderTypeDesc>Normal</OrderTypeDesc> 
+         <DeliveryMethod>FDX</DeliveryMethod> 
+         <DeliveryMethodDesc>FedEx</DeliveryMethodDesc> 
+         <Parts> 
+         <Part> 
+         <PartNumber>A3154C</PartNumber> 
+         <LineCode>ACD</LineCode> 
+         <SellerPartDesc>Air Filter</SellerPartDesc> 
+         <CatalogPartDesc>Air Filter</CatalogPartDesc> 
+         <MfgCode>DCC</MfgCode> 
+         <OrderQty>2</OrderQty> 
+         <PartIdentifier></PartIdentifier> 
+         <AvailableQty>20</AvailableQty> 
+         <Mdse>11.35</Mdse> 
+         <List>16.80</List> 
+         <Core>0.00</Core> 
+         <PartType>6192</PartType> 
+         <ItemType>P</ItemType> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127</VehicleDesc> 
+         </Part> 
+         </Parts> 
+         </BranchCart> 
+        <LaborCart> 
+         <Labor> 
+         <Group>Air Cleaner Element - Remove and Replace</Group> 
+         <Hours>0.30</Hours> 
+         <Skill>D</Skill> 
+         <Component>FUEL INJECTION - GAS; STX; XL; XLT</Component> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M</VehicleDesc> 
+         </Labor> 
+         </LaborCart> 
+         <SpecCart> 
+         <Spec> 
+         <Type>10004</Type> 
+         <TypeDesc>QuickLube Capacities</TypeDesc> 
+         <Desc>Automatic Transmission Fluid: AUTO TRANS CAPACITY-QT 12.100 [Auto 
+        Trans Capacity-qt]; MOTORCRAFT AT Fluid MERCON LV; Exc Canada; 1 Per Veh</Desc> 
+         <Value></Value> 
+         <SmartpageURL></SmartpageURL> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M</VehicleDesc> 
+         </Spec> 
+         </SpecCart> 
+         </Cart>
+    - page: 77
+      text: |-
+        </Response> 
+        5.8.2 JSON 
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Cart", 
+         "PartnerProviderKey": "MyProviderKey", 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Cart", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "Header": { 
+         "AccountId": "29", 
+         "CustomerName": "WHI Garage Shop", 
+         "OrderTotal": "22.70", 
+         "Identifier": "whi002" 
+         }, 
+         "Cart": { 
+         "BranchCart": { 
+         "Name": "New York", 
+         "Id": "100076", 
+        "VendorUsername": "mylogin", 
+         "Total": "22.70", 
+         "ListTotal": "33.60", 
+         "ItemCount": "1", 
+        "OrderType": "NRML", 
+        "OrderTypeDesc": "Normal", 
+         "DeliveryMethod": "FDX", 
+         "DeliveryMethodDesc": "FedEx", 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "A3154C", 
+         "LineCode": "ACD", 
+        "SellerPartDesc": "Air Filter", 
+        "CatalogPartDesc": "Air Filter", 
+         "MfgCode": "DCC", 
+         "OrderQty": "2", 
+         "PartIdentifier": "", 
+         "AvailableQty": "20", 
+         "Mdse": "11.35", 
+         "List": "16.80", 
+         "Core": "0.00", 
+         "PartType": "6192", 
+         "ItemType": "P", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "",
+    - page: 78
+      text: |-
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127" 
+         }] 
+         } 
+         }, 
+         "LaborCart": { 
+         "Labor": [{ 
+         "Group": "Air Cleaner Element - Remove and Replace", 
+         "Hours": "0.30", 
+         "Skill": "D", 
+         "Component": "FUEL INJECTION - GAS; STX; XL; XLT", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "", 
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M" 
+         }] 
+         }, 
+         "SpecCart": { 
+         "Spec": [{ 
+         "Type": "10004", 
+         "TypeDesc": "QuickLube Capacities", 
+         "Desc": "Automatic Transmission Fluid: AUTO TRANS CAPACITY-QT 12.100 
+        [Auto Trans Capacity-qt]; MOTORCRAFT AT Fluid MERCON LV; Exc Canada; 1 Per Veh ", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "", 
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M" 
+         }] 
+         } 
+         } 
+         } 
+        }
+    - page: 79
+      text: |-
+        5.9 Order / Examples / Order Confirmation 
+        This example only applies to SMS integrations. 
+         
+        5.9.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+         <Rev>4.0</Rev> 
+         <ClientVersion>2.6</ClientVersion> 
+         <RequestType>Order</RequestType> 
+         <PartnerProviderKey>MyProviderKey</ PartnerProviderKey> 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Request> 
+         
+         
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Order</RequestType> 
+         <Success></Success> 
+        <ErrorCount></ErrorCount> 
+         <Header> 
+         <AccountId>29</AccountId> 
+         <CustomerName>WHI Garage Shop</CustomerName> 
+         <OrderTotal>22.70</OrderTotal> 
+         <Identifier>whi002</Identifier> 
+         </Header> 
+         <Cart> 
+         <BranchCart> 
+         <Name>New York</Name> 
+         <Id>100076</Id>
+    - page: 80
+      text: |-
+        <VendorUsername>mylogin</VendorUsername> 
+         <Total>22.70</Total> 
+         <ListTotal>33.60</ListTotal> 
+         <ItemCount>1</ItemCount> 
+         <OrderType>NRML</OrderType> 
+         <OrderTypeDesc>Normal</OrderTypeDesc> 
+         <DeliveryMethod>FDX</DeliveryMethod> 
+         <DeliveryMethodDesc>FedEx</DeliveryMethodDesc> 
+        <OrderHeader> 
+         <OrderNumber>1204322</OrderNumber> 
+         <State>ordered</State> 
+         <Discount>0.00</Discount> 
+         <ErrorCode>success</ErrorCode> 
+         <ErrorMsg></ErrorMsg> 
+         <PONumber>PO001</PONumber> 
+         <Comments> 
+         <Comment> 
+         <Type>Vehicle</Type> 
+         <Text>2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127</Text> 
+         </Comment> 
+         </Comments> 
+        </OrderHeader> 
+         <Parts> 
+         <Part> 
+         <PartNumber>A3154C</PartNumber> 
+         <LineCode>ACD</LineCode> 
+         <SellerPartDesc>Air Filter</SellerPartDesc> 
+         <CatalogPartDesc>Air Filter</CatalogPartDesc> 
+         <MfgCode>DCC</MfgCode> 
+         <OrderQty>2</OrderQty> 
+         <PartIdentifier></PartIdentifier> 
+         <AvailableQty>20</AvailableQty> 
+         <Mdse>11.35</Mdse> 
+         <List>16.80</List> 
+         <Core>0.00</Core> 
+         <PartType>6192</PartType> 
+         <ItemType>P</ItemType> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127</VehicleDesc> 
+         <OrderDetails> 
+         <ShipQty>2</ShipQty> 
+        <ErrorCode>success</ErrorCode> 
+         </OrderDetails> 
+         </Part> 
+         </Parts> 
+         </BranchCart> 
+        <LaborCart> 
+         <Labor> 
+         <Group>Air Cleaner Element - Remove and Replace</Group> 
+         <Hours>0.30</Hours>
+    - page: 81
+      text: |-
+        <Skill>D</Skill> 
+         <Component>FUEL INJECTION - GAS; STX; XL; XLT</Component> 
+         </Labor> 
+         </LaborCart> 
+         <SpecCart> 
+         <Spec> 
+         <Type>10004</Type> 
+         <TypeDesc>QuickLube Capacities</TypeDesc> 
+         <Desc>Automatic Transmission Fluid: AUTO TRANS CAPACITY-QT 12.100 [Auto 
+        Trans Capacity-qt]; MOTORCRAFT AT Fluid MERCON LV; Exc Canada; 1 Per Veh</Desc> 
+         <Value></Value> 
+         <SmartpageURL></SmartpageURL> 
+         </Spec> 
+         </SpecCart> 
+         </Cart> 
+        </Response> 
+         
+        5.9.2 JSON 
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "Order", 
+         "PartnerProviderKey": "MyProviderKey", 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+        } 
+         
+         
+        { 
+         "Response": { 
+         "RequestType": "Order", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "Header": { 
+         "AccountId": "29", 
+         "CustomerName": "WHI Garage Shop", 
+         "OrderTotal": "22.70", 
+         "Identifier": "whi002" 
+         }, 
+         "Cart": { 
+         "BranchCart": { 
+         "Name": "New York", 
+         "Id": "100076", 
+        "VendorUsername": "mylogin", 
+         "Total": "22.70", 
+         "ListTotal": "33.60", 
+         "ItemCount": "1", 
+        "OrderType": "NRML", 
+        "OrderTypeDesc": "Normal", 
+         "DeliveryMethod": "FDX", 
+         "DeliveryMethodDesc": "FedEx", 
+        "OrderHeader": {
+    - page: 82
+      text: |-
+        "OrderNumber": "1204322", 
+         "State": "ordered", 
+         "Discount": "0.00", 
+         "ErrorCode": "success", 
+         "PONumber": "PO001", 
+         "Comments": { 
+         "Comment": [{ 
+         "Type": "Vehicle", 
+         "Text": "2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127" 
+         }] 
+         } 
+         }, 
+         "Parts": { 
+         "Part": [{ 
+         "PartNumber": "A3154C", 
+         "LineCode": "ACD", 
+        "SellerPartDesc": "Air Filter", 
+        "CatalogPartDesc": "Air Filter", 
+         "MfgCode": "DCC", 
+         "OrderQty": "2", 
+         "PartIdentifier": "", 
+         "AvailableQty": "20", 
+         "Mdse": "11.35", 
+         "List": "16.80", 
+         "Core": "0.00", 
+         "PartType": "6192", 
+         "ItemType": "P", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "", 
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127", 
+        "OrderDetails": { 
+         "ShipQty": "2", 
+        "ErrorCode": "success" 
+         } 
+         }] 
+         } 
+         } 
+         
+         } 
+         } 
+        }
+    - page: 83
+      text: |-
+        5.10 Order / Examples / Live Cart 
+         
+        When the user hits the “Add to Cart” button instead of adding to the shopping cart, when “LiveCart” option is 1 at 
+        launch, Nexpart will return the item being added to the WebPostURL. (DMS Only) 
+         
+        5.10.1 XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+         <RequestType>Cart</RequestType> 
+         <Success></Success> 
+        <ErrorCount></ErrorCount> 
+         <Header> 
+         <AccountId>29</AccountId> 
+         <CustomerName>WHI Garage Shop</CustomerName> 
+         <OrderTotal>22.70</OrderTotal> 
+         <Identifier>whi002</Identifier> 
+         </Header> 
+         <Cart> 
+         <BranchCart> 
+         <Name>New York</Name> 
+         <Id>100076</Id> 
+        <VendorUsername>mylogin</VendorUsername> 
+         <Total>22.70</Total> 
+         <ListTotal>33.60</ListTotal> 
+         <ItemCount>1</ItemCount> 
+         <OrderType>NRML</OrderType> 
+         <OrderTypeDesc>Normal</OrderTypeDesc> 
+         <DeliveryMethod>FDX</DeliveryMethod>
+    - page: 84
+      text: |-
+        <DeliveryMethodDesc>FedEx</DeliveryMethodDesc> 
+         <Parts> 
+         <Part> 
+         <PartNumber>A3154C</PartNumber> 
+         <LineCode>ACD</LineCode> 
+         <SellerPartDesc>Air Filter</SellerPartDesc> 
+         <CatalogPartDesc>Air Filter</CatalogPartDesc> 
+         <MfgCode>DCC</MfgCode> 
+         <OrderQty>2</OrderQty> 
+         <PartIdentifier></PartIdentifier> 
+         <AvailableQty>20</AvailableQty> 
+         <Mdse>11.35</Mdse> 
+         <List>16.80</List> 
+         <Core>0.00</Core> 
+         <PartType>6192</PartType> 
+         <ItemType>P</ItemType> 
+         <VehicleId>128070</VehicleId> 
+         <WHIEngineConfigId>13811</WHIEngineConfigId> 
+         <SubmodelId></SubmodelId> 
+         <VehicleDesc>2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127</VehicleDesc> 
+         </Part> 
+         </Parts> 
+         </BranchCart> 
+         </Cart> 
+        </Response> 
+         
+        5.10.2 JSON 
+        { 
+         "Response": { 
+         "RequestType": "Cart", 
+         "Success": "1", 
+         "ErrorCount": "0", 
+         "Header": { 
+         "AccountId": "29", 
+         "CustomerName": "WHI Garage Shop", 
+         "OrderTotal": "22.70", 
+         "Identifier": "whi002" 
+         }, 
+         "Cart": { 
+         "BranchCart": { 
+         "Name": "New York", 
+         "Id": "100076", 
+        "VendorUsername": "mylogin", 
+         "Total": "22.70", 
+         "ListTotal": "33.60", 
+         "ItemCount": "1", 
+        "OrderType": "NRML", 
+        "OrderTypeDesc": "Normal", 
+         "DeliveryMethod": "FDX", 
+         "DeliveryMethodDesc": "FedEx", 
+         "Parts": {
+    - page: 85
+      text: |-
+        "Part": [{ 
+         "PartNumber": "A3154C", 
+         "LineCode": "ACD", 
+        "SellerPartDesc": "Air Filter", 
+        "CatalogPartDesc": "Air Filter", 
+         "MfgCode": "DCC", 
+         "OrderQty": "2", 
+         "PartIdentifier": "", 
+         "AvailableQty": "20", 
+         "Mdse": "11.35", 
+         "List": "16.80", 
+         "Core": "0.00", 
+         "PartType": "6192", 
+         "ItemType": "P", 
+         "VehicleId": "128070", 
+         "WHIEngineConfigId": "13811", 
+         "SubmodelId": "", 
+        "VehicleDesc": "2014 Ford F-150 3.7L V6 FLEX VIN:M - 
+        1FTMF1CM5EKG23127" 
+         }] 
+         } 
+         } 
+         
+         } 
+         } 
+        }
+    - page: 86
+      text: |-
+        6. Smart Page 
+        This allows a DMS/POS user to pass an optional line code and part number and return smart page links for the 
+        requested part. If multiple smart page links will be returned if the part matches multiple results. 
+         
+        6.1 SmartPage / Request / Details 
+        In this specification, the request has various required entities. The requests and responses are supported in both XML 
+        and JSON formats. 
+        Request / 
+         Rev: This entity is required. This specifies Version of Spec integrated to 
+         ClientVersion: This entity is required. This specifies Version Number of Client (your) Software 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “SmartPage” 
+        PartnerProviderKey: This entity is required. Security Key of the SMS, DMS or POS Provider or Id. This will be 
+        provided to you by WHI. 
+        Username: This entity is required and is the valid username with Nexpart. For DMS this represents the 
+        counterperson login while for SMS integrations this represents the user’s login. 
+        Password: This entity is required and represents the password associated with the username. For DMS this 
+        represents the counterperson password while for SMS integrations this represents the user’s password. 
+        Language: This entity is optional. This represents the Desired language, using one of the Nexpart Language 
+        codes. If no value is passed, then it defaults to “English”. Refer to the Appendix for more information 
+        Parts / 
+        Part / 
+        PartNumber: This entity is required. 
+        LineCode: This entity is optional and is the Supplier Linecode for the part number. 
+        MfgCode: This entity is optional and is the WHI Catalog assigned manufacturer code for the 
+        part number. 
+        6.1.1 SmartPage / Request / Details / Quick Info 
+         
+        Request /
+    - page: 87
+      text: |-
+        Component Occurs Required Applies 
+        To 
+        Type Value(s) 
+        Rev 1..1 Yes SMS, DMS Decimal "4.0" 
+        ClientVersion 1..1 Yes DMS String System 
+        Defined 
+        RequestType 1..1 Yes DMS String "SmartPage" 
+        PartnerProviderKey 1..1 Yes DMS String Will be 
+        Provided by 
+        WHI 
+        Username 1..1 Yes DMS String System 
+        Defined 
+        Password 1..1 Yes DMS String System 
+        Defined 
+        Language 0..1 Yes DMS Enumera
+        tion 
+        See Appendix 
+        Parts 1..1 Yes DMS String - 
+        Parts →Part 1..1 Yes DMS String - 
+        Parts →Part → PartNumber 1..1 Yes DMS String User Defined 
+        Parts →Part → MfgCode 1..1 No DMS String User Defined 
+        Parts →Part → LineCode 1..1 No DMS String User Defined 
+         
+         
+         
+        6.2 SmartPage / Response / Details 
+         
+        Response / 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Logout” 
+         Success: This entity is required. Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         ErrorCount: This entity is required. Numeric count of errors. If no errors value returned is 0. 
+         Errors / This entity is required only if ErrorCount > 0. 
+         ErrorCode: This entity is required. Short Error Code for the error. See appendix for more details. 
+         ErrorDesc: This entity is required. Detailed Error Description
+    - page: 88
+      text: |-
+        SmartPage / This entity is required 
+         
+         Parts / This entity is required 
+         PartNumber: This entity is required. 
+         
+         LineCode: This entity is optional. Distributor’s line code for the part above 
+         
+        MfgCode: This entity is required. WHI Catalog based manufacturer code for each 
+        manufacturer 
+        SmartpageURL: This entity is required. Smart Page link of the part. 
+         
+        6.2.1 SmartPage / Response / Details / Quick Info 
+        Response / 
+        Component Occurs Required Applies To Type Value(s) 
+        RequestType 1..1 Yes DMS String "Logout" 
+        Success 1..1 Yes DMS Bit 1 or 0 
+        ErrorCount 1..1 Yes DMS Integer System 
+        Defined 
+        Errors 0..1 Yes if 
+        errors 
+        else No 
+        DMS - - 
+        Errors → Error 1..* Yes if 
+        errors 
+        else No 
+        DMS - - 
+        Errors → Error → ErrorCode 1..1 Yes if 
+        errors 
+        else No 
+        DMS Integer See 
+        appendix 
+        Errors → Error → ErrorDesc 1..1 Yes if 
+        errors 
+        else No 
+        DMS String See 
+        appendix 
+        SmartPage 0..1 Yes DMS String - 
+        SmartPage → Parts 1..1 Yes DMS - - 
+        SmartPage → Parts → Part 0..* Yes SMS, DMS - - 
+        SmartPage → Parts → Part → PartNumber 1..1 Yes DMS String System 
+        Defined
+    - page: 89
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        SmartPage → Parts → Part → LineCode 1..1 Yes DMS String System 
+        Defined 
+        SmartPage → Parts → Part → MfgCode 1..1 Yes DMS String System 
+        Defined 
+        SmartPage → Parts → Part → SmartpageURL 1..1 Yes DMS String System 
+        Defined 
+         
+         
+        6.3 SmartPage / Request / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+        Version of Spec integrated to * Required 
+         <Rev>4.0</Rev> 
+        Version Number of Client (your) Software * Required 
+         <ClientVersion>2.6</ClientVersion> 
+        Type of Request. For this type of transaction the value is “Logout” * Required 
+         <RequestType>SmartPage</RequestType> 
+        Partner key assigned to SMS, DMS or POS Provider * Required 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+        Valid Username for Nexpart. For DMS this represents the counterperson login while for SMS integrations this represents the user’s 
+        login. * Required 
+         <Username>abc</Username> 
+        Valid Password for Nexpart. For DMS this represents the counterperson password while for SMS integrations this represents the 
+        user’s password. * Required 
+         <Password>pass</Password> 
+        Desired language, using one of the Nexpart Language codes. If no value is passed, then it defaults to “English”. Refer to the 
+        Appendix for more information. 
+         <Language>en</Language> 
+         <Parts> 
+         <Part> 
+        PartNumber to stock check or interchange or buyer’s guide lookup. Valid only when Type = 
+        “stock” or “int” or “bg” 
+         <PartNumber></PartNumber> 
+        WHI assigned Manufacturer Code for the part number for Interchange or Buyer’s Guide Lookup. 
+        Valid only when Type = “bg” or “int” 
+         <MfgCode></MfgCode>
+    - page: 90
+      text: |-
+        Linecode for the part number to stock check. Valid only when Type = “stock” 
+         <LineCode></LineCode> 
+         </Part> 
+         </Parts> 
+        </Request> 
+         
+        6.4. SmartPage / Response / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        Type of Request. For this type of transaction the value is “Logout” * Required 
+         <RequestType>Logout</RequestType> 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         <Success></Success> 
+        Numeric count of errors. If no errors value returned is 0. 
+        <ErrorCount></ErrorCount> 
+        Returned when the error count > 0. 
+        <Errors> 
+         <Error> 
+        Short Error Code for the error. 
+         <ErrorCode></ErrorCode> 
+        Detailed Error Description 
+         <ErrorDesc></ErrorDesc> 
+         </Error> 
+         </Errors> 
+         <SmartPage> 
+         <Parts> 
+         <Part> 
+        The part number 
+         <PartNumber></PartNumber> 
+        Distributor’s line code for the part above 
+         <LineCode></LineCode> 
+        WHI Catalog line code for the part above 
+         <MfgCode></MfgCode>
+    - page: 91
+      text: |-
+        Part Smart Page URL 
+         <SmartpageURL></SmartpageURL> 
+         </Part> 
+         </Parts> 
+         </ SmartPage > 
+        </Response> 
+         
+        6.5 SmartPage / Request / JSON 
+        { 
+         "Request": { 
+         "Rev": "4.0", 
+         "ClientVersion": "2.6", 
+         "RequestType": "SmartPage", 
+         "PartnerProviderKey": "MyProviderKey", 
+         "Username": "abc", 
+         "Password": "pass", 
+         "Language": "en", 
+         "SmartPage": { 
+         "Parts": { 
+         "Part": [ { 
+         "PartNumber": "PF52", 
+         "LineCode": "A42", 
+         "MfgCode": "" 
+         }, 
+         { 
+         "PartNumber": "51515", 
+         "LineCode": "", 
+         "MfgCode": "WIX" 
+         } 
+         ] }
+    - page: 92
+      text: |-
+        } 
+         } 
+        } 
+         
+        6.7. SmartPage / Response / JSON 
+        { 
+         "Response":{ 
+         "RequestType":"SmartPage", 
+         "Success":"1", 
+         "ErrorCount":"0", 
+         "SmartPage":{ 
+         "Parts":{ 
+         "Part":[ { 
+         "PartNumber":"PF52", 
+         "LineCode":"A42", 
+         "MfgCode":{}, 
+         "SmartpageURL":"https://smartpage.url" 
+         }, 
+         { 
+         "PartNumber":"51515", 
+         "LineCode":{}, 
+         "MfgCode":"WIX", 
+         "SmartpageURL":"https://smartpage.url" 
+         } 
+         ] 
+         } 
+         } 
+         } 
+        }
+    - page: 93
+      text: |-
+        7. Logout 
+        This allows SMS/DMS/POS user to login to Nexpart application through their system. Integration to this transaction is 
+        only required if you are retrieving the cart through the Pull method described above. If you send a WebPostURL at 
+        launch and your users click the “exit” buttons on the screen, the response of this transaction will get automatically 
+        submitted to your system w/o an explicit request. You may choose to ignore this response. 
+         
+        7.1 Logout / Request / Details 
+        In this specification, the request has various required entities. The requests and responses are supported in both XML 
+        and JSON formats. 
+        Request / 
+         Rev: This entity is required. This specifies Version of Spec integrated to 
+         ClientVersion: This entity is required. This specifies Version Number of Client (your) Software 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Logout” 
+        PartnerProviderKey: This entity is required. Security Key of the SMS, DMS or POS Provider or Id. This will be 
+        provided to you by WHI. 
+        ApiTokenKey: This entity is required. API Authorization Token received at launch to use for subsequent calls 
+        within the same session for the same user. 
+         
+        7.1.1 Logout / Request / Details / Quick Info 
+         
+        Request / 
+        Component Occurs Required Applies 
+        To 
+        Type Value(s) 
+        Rev 1..1 Yes SMS, DMS Decimal "4.0" 
+        ClientVersion 1..1 Yes SMS, DMS String System 
+        Defined 
+        RequestType 1..1 Yes SMS, DMS String "Logout" 
+        PartnerProviderKey 1..1 Yes SMS, DMS String Will be 
+        Provided by 
+        WHI 
+        ApiTokenKey 0..1 Yes if no 
+        errors 
+        else No 
+        SMS, DMS String System 
+        Defined
+    - page: 94
+      text: |-
+        7.2 Logout / Response / Details 
+         
+        Response / 
+        RequestType: This entity is required. Type of Request. For this type of transaction, the value is “Logout” 
+         Success: This entity is required. Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         ErrorCount: This entity is required. Numeric count of errors. If no errors value returned is 0. 
+         Errors / This entity is required only if ErrorCount > 0. 
+         ErrorCode: This entity is required. Short Error Code for the error. See appendix for more details. 
+         ErrorDesc: This entity is required. Detailed Error Description 
+        ApiTokenKey: This entity is required. 
+         
+         
+        7.2.1 Launch / Response / Details / Quick Info 
+        Response / 
+        Component Occurs Required Applies To Type Value(s) 
+        RequestType 1..1 Yes SMS, DMS String "Logout" 
+        Success 1..1 Yes SMS, DMS Bit 1 or 0 
+        ErrorCount 1..1 Yes SMS, DMS Integer System 
+        Defined 
+        Errors 0..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS - - 
+        Errors → Error 1..* Yes if 
+        errors 
+        else No 
+        SMS, DMS - - 
+        Errors → Error → ErrorCode 1..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS Integer See 
+        appendix 
+        Errors → Error → ErrorDesc 1..1 Yes if 
+        errors 
+        else No 
+        SMS, DMS String See 
+        appendix
+    - page: 95
+      text: |-
+        Component Occurs Required Applies To Type Value(s) 
+        ApiTokenKey 0..1 Yes if no 
+        errors 
+        else No 
+        SMS, DMS String System 
+        Defined 
+         
+         
+         
+        7.3 Logout / Request / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Request> 
+        Version of Spec integrated to * Required 
+         <Rev>4.0</Rev> 
+        Version Number of Client (your) Software * Required 
+         <ClientVersion>2.6</ClientVersion> 
+        Type of Request. For this type of transaction the value is “Logout” * Required 
+         <RequestType>Logout</RequestType> 
+        Partner key assigned to SMS, DMS or POS Provider * Required 
+         <PartnerProviderKey>MyProviderKey</PartnerProviderKey> 
+        API Token Key provided from the Launch Response * Required 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Request> 
+         
+        7.4. Logout / Response / XML 
+        <?xml version="1.0" encoding="UTF-8" ?> 
+        <Response> 
+        Type of Request. For this type of transaction the value is “Logout” * Required 
+         <RequestType>Logout</RequestType> 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         <Success></Success> 
+        Numeric count of errors. If no errors value returned is 0. 
+        <ErrorCount></ErrorCount> 
+        Returned when the error count > 0. 
+        <Errors> 
+         <Error>
+    - page: 96
+      text: |-
+        Short Error Code for the error. 
+         <ErrorCode></ErrorCode> 
+        Detailed Error Description 
+         <ErrorDesc></ErrorDesc> 
+         </Error> 
+         </Errors> 
+        API Token Key provided from the Launch Response 
+         <ApiTokenKey> dsfggleddirt#rifgj9EaF</ApiTokenKey> 
+        </Response> 
+         
+        7.6 Logout / Request / JSON 
+        { 
+         "Request": { 
+        Version of Spec integrated to * Required 
+         "Rev": "4.0", 
+        Version Number of Client (your) Software * Required 
+         "ClientVersion": "2.6", 
+        Type of Request. For this type of transaction the value is “Order” * Required 
+         "RequestType": "Logout", 
+        Partner Key assigned to the SMS, DMS or POS * Required 
+         "PartnerProviderKey": "MyProviderKey", 
+        API Authorization Token to use for subsequent calls within the same session for the same user. * Required 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+        } 
+        7.7. Logout / Response / JSON 
+        { 
+         "Response": { 
+        Type of Request. For this type of transaction the value is “Order” * Required 
+         "RequestType": "Logout", 
+        Is Request Successful or Failed? 1 for Success, 0 for Fail. 
+         "Success": "", 
+        Numeric count of errors. If no errors value returned is 0. 
+         "ErrorCount": "",
+    - page: 97
+      text: |-
+        "Errors": { 
+         "Error": [{ 
+        Short Error Code for the error. 
+         "ErrorCode": "", 
+        Detailed Error Description 
+         "ErrorDesc": "" 
+         }] 
+         }, 
+        API Authorization Token to identify the user. 
+         "ApiTokenKey": " dsfggleddirt#rifgj9EaF" 
+         } 
+        } 
+        8. Best Practices 
+        8.1 Ending a Session (Applies to DMS Customers Only, does not apply to SMS) 
+        There are three ways that a NCC session can be ended by the user. Clicking Close & Exit Button, clicking a Custom 
+        Button and pushing the cart contents, and clicking a Custom Button and pulling the cart contents. 
+        Close & Exit Button 
+        When the Close & Exit button is pressed in NCC, the following occurs: 
+        1. The current contents of the cart is deleted. 
+        2. The user is redirected to the LogoutURL from the request. If no LogoutURL is provided, the user is presented with a 
+        screen to close the browser window. 
+        Custom Button using Push Data 
+        A push request uses the WebPostURL, WebPostBtnLabel and LogoutURL request parameters. When WebPostURL is 
+        passed as a request parameter, a button is added to the NCC interface. The title of the button is the value passed in 
+        the WebPostBtnLabel. When the button is pushed the following occurs: 
+        1. The contents of the shopping cart is posted to the provided WebPostURL in the Cart Response format. 
+        2. The user is redirected to the LogoutURL from the request. If no LogoutURL is provided, the user is presented with a 
+        screen to close the browser window. 
+        Custom Button using Pull Data 
+        A pull request uses the WebPostURL, WebPostBtnLabel and LogoutURL request parameters. For a pull, the 
+        WebPostURL request value is populated with the value PULL. This adds a button to the NCC interface. The title of the 
+        button is the value passed in the WebPostBtnLabel. When the button is pushed the following occurs: 
+        1. The user is redirected to the LogoutURL from the request. If no LogoutURL is provided, the user is presented with a 
+        screen to close the browser window. 
+        2. The integrator will detect the browser closing or the navigation to the LogoutURL to trigger their pull request to 
+        retrieve the cart contents.
+    - page: 98
+      text: |-
+        8.2 Browser Recommendation 
+        Based on performance and speed tests, Google Chrome has proven to be the best browser to give the best 
+        user experience. It is recommended to implement the specification using Chrome. 
+         
+        9. Appendix 
+        9.1 Language Codes 
+        The following is a list of valid languages and the two letter abbreviation. 
+        Language Abbreviation / Value 
+        English en 
+        French fr 
+        Spanish es 
+         
+        9.2 Login Error Codes 
+        The following is a list of login error codes that are returned for unsuccessful logins. The codes are returned in the query element 
+        “Error”. 
+        Error Code Description 
+        1 Invalid User 
+        2 Supplier Account Verification Failed 
+        3 Account is Expired 
+        4 
+        Communication with the supplier has 
+        failed. 
+        9 Invalid Partner Provider Key 
+        20 Required Element Missing 
+        21 
+        Your account has restricted access. 
+        Please contact your supplier. 
+         
+        9.3 Unit of Measure Table 
+        The majority of the time, UOM will be Each. For this reason, this attribute is optional in Parts Lookup. If UOM is included, the value 
+        provided will be used. If UOM is excluded, the default value of Each will be utilized. 
+         
+        Code Description 
+        blank Each 
+        EA Each 
+        BX Box 
+        BG Bag
+    - page: 99
+      text: |-
+        CD Card 
+        CS Case 
+        CT Carton 
+        DR Drum 
+        FT Foot 
+        GL Gallon 
+        LB Pound 
+        IN Inches 
+        KL Kilo 
+        KT Kit 
+        LI Liter 
+        PK Pack 
+        PR Pair 
+        PT Pint 
+        QT Quart 
+        RL Roll 
+        SL Sleeve 
+        ST Set 
+        UT Unit 
+         
+         
+        9.4 Specification Types 
+        Specification 
+        Type Description 
+        10001 Brakes 
+        10002 Underhood Lubrication Guide 
+        10003 Cooling/Miscellaneous 
+        10004 Quicklube Capacities 
+        10005 Service Intervals 
+        10006 Steering and Suspension Torques 
+        10007 Technical Service Bulletins (TSB) 
+        10008 Tire Data 
+        10009 Tune Up 
+        10010 Wheel Alignment 
+        10011 Wiring Diagrams 
+        0012 Component Locator

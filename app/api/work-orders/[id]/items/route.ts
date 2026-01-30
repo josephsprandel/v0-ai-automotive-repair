@@ -105,7 +105,8 @@ export async function POST(
       labor_hours,
       labor_rate,
       is_taxable,
-      display_order
+      display_order,
+      service_id
     } = body
 
     // Calculate line total
@@ -133,9 +134,10 @@ export async function POST(
         labor_rate,
         is_taxable,
         display_order,
+        service_id,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
       RETURNING *
     `, [
       workOrderId,
@@ -150,7 +152,8 @@ export async function POST(
       labor_hours || null,
       labor_rate || 160,
       is_taxable ?? true,
-      display_order || 0
+      display_order || 0,
+      service_id || null
     ])
 
     console.log('✓ Inserted successfully - ID:', result.rows[0].id)

@@ -1,10 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ArrowLeft, Edit2, Mail, Phone, MessageSquare, MapPin, Calendar, DollarSign, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { VehicleManagement } from "./vehicle-management"
 
 interface Customer {
@@ -27,9 +31,27 @@ interface Customer {
 }
 
 export function CustomerProfile({ customerId, onClose }: { customerId: string; onClose?: () => void }) {
+  const router = useRouter()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [formData, setFormData] = useState({
+    customer_name: "",
+    first_name: "",
+    last_name: "",
+    phone_primary: "",
+    phone_secondary: "",
+    phone_mobile: "",
+    email: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    zip: "",
+  })
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -54,6 +76,82 @@ export function CustomerProfile({ customerId, onClose }: { customerId: string; o
       fetchCustomer()
     }
   }, [customerId])
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  const openEdit = () => {
+    if (!customer) return
+    setFormData({
+      customer_name: customer.customer_name || "",
+      first_name: customer.first_name || "",
+      last_name: customer.last_name || "",
+      phone_primary: customer.phone_primary || "",
+      phone_secondary: customer.phone_secondary || "",
+      phone_mobile: customer.phone_mobile || "",
+      email: customer.email || "",
+      address_line1: customer.address_line1 || "",
+      address_line2: customer.address_line2 || "",
+      city: customer.city || "",
+      state: customer.state || "",
+      zip: customer.zip || "",
+    })
+    setEditOpen(true)
+  }
+
+  const handleFormChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSave = async () => {
+    if (!customer) return
+    setSaving(true)
+
+    const previousCustomer = customer
+    const updatedCustomer = {
+      ...customer,
+      ...formData,
+    }
+    setCustomer(updatedCustomer)
+
+    try {
+      const response = await fetch(`/api/customers/${customer.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: formData.customer_name,
+          first_name: formData.first_name || null,
+          last_name: formData.last_name || null,
+          phone_primary: formData.phone_primary,
+          phone_secondary: formData.phone_secondary || null,
+          phone_mobile: formData.phone_mobile || null,
+          email: formData.email || null,
+          address_line1: formData.address_line1 || null,
+          address_line2: formData.address_line2 || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          zip: formData.zip || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText || "Failed to update customer")
+      }
+
+      const data = await response.json()
+      setCustomer(data.customer)
+      setEditOpen(false)
+      showToast("Customer updated successfully", "success")
+    } catch (err: any) {
+      setCustomer(previousCustomer)
+      showToast(err.message || "Failed to update customer", "error")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -102,7 +200,7 @@ export function CustomerProfile({ customerId, onClose }: { customerId: string; o
             </div>
           </div>
         </div>
-        <Button size="icon" className="gap-2">
+        <Button size="icon" className="gap-2" onClick={openEdit}>
           <Edit2 size={18} />
         </Button>
       </div>
@@ -185,7 +283,9 @@ export function CustomerProfile({ customerId, onClose }: { customerId: string; o
 
           {/* Quick Actions */}
           <div className="space-y-2">
-            <Button className="w-full">Create New RO</Button>
+            <Button className="w-full" onClick={() => router.push(`/repair-orders/new?customerId=${customer.id}`)}>
+              Create New RO
+            </Button>
             <Button variant="outline" className="w-full bg-transparent">
               View History
             </Button>
@@ -195,6 +295,107 @@ export function CustomerProfile({ customerId, onClose }: { customerId: string; o
           </div>
         </div>
       </div>
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 rounded-md px-4 py-3 text-sm shadow-lg border ${
+            toast.type === "success"
+              ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+              : "bg-destructive/10 text-destructive border-destructive/20"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={formData.customer_name}
+                onChange={(e) => handleFormChange("customer_name", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                value={formData.email}
+                onChange={(e) => handleFormChange("email", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Primary Phone</Label>
+              <Input
+                value={formData.phone_primary}
+                onChange={(e) => handleFormChange("phone_primary", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Secondary Phone</Label>
+              <Input
+                value={formData.phone_secondary}
+                onChange={(e) => handleFormChange("phone_secondary", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Mobile Phone</Label>
+              <Input
+                value={formData.phone_mobile}
+                onChange={(e) => handleFormChange("phone_mobile", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Address Line 1</Label>
+              <Input
+                value={formData.address_line1}
+                onChange={(e) => handleFormChange("address_line1", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Address Line 2</Label>
+              <Input
+                value={formData.address_line2}
+                onChange={(e) => handleFormChange("address_line2", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>City</Label>
+              <Input
+                value={formData.city}
+                onChange={(e) => handleFormChange("city", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>State</Label>
+              <Input
+                value={formData.state}
+                onChange={(e) => handleFormChange("state", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Zip</Label>
+              <Input
+                value={formData.zip}
+                onChange={(e) => handleFormChange("zip", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

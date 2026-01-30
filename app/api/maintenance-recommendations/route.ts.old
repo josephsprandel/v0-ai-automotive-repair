@@ -125,7 +125,7 @@ async function extractMaintenanceFromPDF(
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY)
-  const geminiModel = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+  const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
   try {
     console.log('[AI Maintenance] Downloading PDF from:', pdfUrl)

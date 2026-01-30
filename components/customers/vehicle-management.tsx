@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Clock, Loader2 } from "lucide-react"
+import { Plus, Clock, Loader2, Edit2 } from "lucide-react"
 import { VehicleCreateDialog } from "./vehicle-create-dialog"
+import { VehicleEditDialog } from "./vehicle-edit-dialog"
 
 interface Vehicle {
   id: string
@@ -32,6 +33,26 @@ export function VehicleManagement({ customerId }: { customerId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  const handleVehicleClick = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle)
+    setEditDialogOpen(true)
+  }
+
+  const handleVehicleUpdated = (updatedVehicle: Vehicle) => {
+    setVehicles((prev) =>
+      prev.map((v) => (v.id === updatedVehicle.id ? updatedVehicle : v))
+    )
+    showToast("Vehicle updated successfully", "success")
+  }
 
   const fetchVehicles = async () => {
     setLoading(true)
@@ -82,7 +103,15 @@ export function VehicleManagement({ customerId }: { customerId: string }) {
           </Card>
         ) : vehicles.length > 0 ? (
           vehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="p-4 border-border">
+            <Card
+              key={vehicle.id}
+              className="p-4 border-border cursor-pointer hover:bg-muted/50 transition-colors group relative"
+              onClick={() => handleVehicleClick(vehicle)}
+            >
+              {/* Edit icon on hover */}
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Edit2 size={16} className="text-muted-foreground" />
+              </div>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
@@ -162,6 +191,27 @@ export function VehicleManagement({ customerId }: { customerId: string }) {
         onSuccess={fetchVehicles}
         customerId={customerId}
       />
+
+      {/* Edit Dialog */}
+      <VehicleEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        vehicle={selectedVehicle}
+        onSuccess={handleVehicleUpdated}
+      />
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 rounded-md px-4 py-3 text-sm shadow-lg border ${
+            toast.type === "success"
+              ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+              : "bg-destructive/10 text-destructive border-destructive/20"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   )
 }

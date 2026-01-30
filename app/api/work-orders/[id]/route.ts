@@ -75,3 +75,55 @@ export async function GET(
     )
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const resolvedParams = await context.params
+    const { id } = resolvedParams
+    const workOrderId = parseInt(id, 10)
+
+    if (isNaN(workOrderId)) {
+      return NextResponse.json(
+        { error: 'Invalid work order ID', received: id },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+    const { status } = body as { status?: string }
+
+    if (!status) {
+      return NextResponse.json(
+        { error: 'No fields provided for update' },
+        { status: 400 }
+      )
+    }
+
+    const updateResult = await query(
+      `UPDATE work_orders
+       SET state = $1, updated_at = NOW()
+       WHERE id = $2 AND is_active = true
+       RETURNING id, ro_number, state, updated_at`,
+      [status, workOrderId]
+    )
+
+    if (updateResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Work order not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ work_order: updateResult.rows[0] })
+  } catch (error: any) {
+    console.error('=== API ERROR (PATCH) ===')
+    console.error('Error message:', error.message)
+    return NextResponse.json(
+      { error: 'Failed to update work order', details: error.message },
+      { status: 500 }
+    )
+  }
+}

@@ -307,15 +307,61 @@ async function getVehicleByVIN(vin, cookies) {
 async function getPartTypeFromSearch(searchTerm, cookies) {
   console.log(`🔍 Looking up part type for: "${searchTerm}"`);
 
+  // Use the EXACT query structure from PartsTech
   const query = `
     query GetTypeahead($search: String!) {
       typeahead(search: $search) {
         item {
-          ... on PartType {
-            id
-            name
+          ...TypeaheadPartTypeGroup
+          ...TypeaheadPartType
+          ...TypeaheadGroupedPartNumber
+          ...TypeaheadPartTypeWithAttributes
+        }
+        suggested
+      }
+      isPartNumber(search: $search)
+    }
+    
+    fragment TypeaheadPartTypeGroup on PartTypeGroup {
+      id
+      name
+      aliases
+      partTypes {
+        id
+        aliases
+        application
+        name
+      }
+    }
+
+    fragment TypeaheadPartType on PartType {
+      id
+      name
+      application
+      aliases
+    }
+
+    fragment TypeaheadGroupedPartNumber on GroupedPartNumber {
+      id
+      partNumber: number
+      brandName: companyName
+    }
+
+    fragment TypeaheadPartTypeWithAttributes on SearchPartType {
+      matches {
+        ... on SearchPartTypeAttribute {
+          name
+          values {
+            highlights
+            value
           }
         }
+      }
+      partType {
+        id
+        name
+        application
+        aliases
       }
     }
   `;
@@ -326,22 +372,48 @@ async function getPartTypeFromSearch(searchTerm, cookies) {
     const data = await graphqlQuery(query, variables, 'GetTypeahead', cookies);
 
     if (!data.typeahead || data.typeahead.length === 0) {
-      console.log(`⚠️ No part type found, will try direct part number search`);
+      console.log(`⚠️ No part type found`);
       return null;
     }
 
     // Get first result
-    const partType = data.typeahead[0].item;
+    const result = data.typeahead[0];
+    const item = result.item;
 
-    console.log(`✅ Part type found: ${partType.name} (ID: ${partType.id})`);
+    // Handle different item types
+    let partTypeId = null;
+    let partTypeName = null;
+
+    // Check if it's a PartType (simple)
+    if (item.id && item.name && !item.partTypes && !item.partType) {
+      partTypeId = item.id;
+      partTypeName = item.name;
+    }
+    // Check if it's a SearchPartType (has nested partType)
+    else if (item.partType) {
+      partTypeId = item.partType.id;
+      partTypeName = item.partType.name;
+    }
+    // Check if it's a PartTypeGroup (has partTypes array)
+    else if (item.partTypes && item.partTypes.length > 0) {
+      // Use first part type in the group
+      partTypeId = item.partTypes[0].id;
+      partTypeName = item.partTypes[0].name;
+    }
+
+    if (!partTypeId) {
+      console.log(`⚠️ Could not extract part type ID from:`, JSON.stringify(item));
+      return null;
+    }
+
+    console.log(`✅ Part type found: ${partTypeName} (ID: ${partTypeId})`);
 
     return {
-      id: partType.id,
-      name: partType.name
+      id: partTypeId,
+      name: partTypeName
     };
 
   } catch (error) {
-    // If typeahead fails, return null to trigger part number fallback
     console.log(`⚠️ Typeahead failed: ${error.message}`);
     return null;
   }
@@ -352,8 +424,8 @@ async function getPartTypeFromSearch(searchTerm, cookies) {
  */
 async function searchVendorParts(accountId, vehicleId, vin, partTypeIds, cookies) {
   const query = `
-    query GetProducts($accountId: ID!, $searchInput: SearchInput!) {
-      products(accountId: $accountId, searchInput: $searchInput) {
+    query GetProducts($searchInput: SearchInput!) {
+      products(searchInput: $searchInput) {
         products {
           id
           partNumber
@@ -385,12 +457,12 @@ async function searchVendorParts(accountId, vehicleId, vin, partTypeIds, cookies
           stocked
           sponsorType
         }
+        errors
       }
     }
   `;
 
   const variables = {
-    accountId: accountId,
     searchInput: {
       partTypeAttribute: {
         accountId: accountId,

@@ -30,30 +30,17 @@ interface VehicleSelectionStepProps {
   onSelectVehicle: (vehicle: VehicleData | null) => void
 }
 
-const existingVehicles = [
-  {
-    id: "veh-001",
-    year: "2022",
-    make: "Tesla",
-    model: "Model 3",
-    trim: "Long Range",
-    vin: "5YJ3E1EA2PF123456",
-    licensePlate: "ABC-1234",
-    color: "White",
-    mileage: "24,500",
-  },
-  {
-    id: "veh-002",
-    year: "2020",
-    make: "Honda",
-    model: "Accord",
-    trim: "Sport",
-    vin: "1HGCV1F34LA012345",
-    licensePlate: "XYZ-5678",
-    color: "Black",
-    mileage: "45,200",
-  },
-]
+interface ExistingVehicle {
+  id: string
+  year: string
+  make: string
+  model: string
+  trim?: string
+  vin: string
+  licensePlate: string
+  color: string
+  mileage: string
+}
 
 type CreationMode = "select" | "manual" | "ai"
 
@@ -69,6 +56,9 @@ export function VehicleSelectionStep({
   selectedVehicle,
   onSelectVehicle,
 }: VehicleSelectionStepProps) {
+  const [existingVehicles, setExistingVehicles] = useState<ExistingVehicle[]>([])
+  const [vehiclesLoading, setVehiclesLoading] = useState(false)
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null)
   const [creationMode, setCreationMode] = useState<CreationMode>("select")
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -88,6 +78,45 @@ export function VehicleSelectionStep({
     mileage: "",
     isNew: true,
   })
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!customerId) {
+        setExistingVehicles([])
+        return
+      }
+
+      setVehiclesLoading(true)
+      setVehiclesError(null)
+
+      try {
+        const response = await fetch(`/api/vehicles?customer_id=${customerId}`)
+        if (!response.ok) {
+          throw new Error("Failed to load vehicles")
+        }
+        const data = await response.json()
+        const vehicles = (data.vehicles || []).map((vehicle: any) => ({
+          id: vehicle.id,
+          year: String(vehicle.year || ""),
+          make: vehicle.make || "",
+          model: vehicle.model || "",
+          trim: vehicle.submodel || vehicle.trim || "",
+          vin: vehicle.vin || "",
+          licensePlate: vehicle.license_plate || "",
+          color: vehicle.color || "",
+          mileage: vehicle.mileage ? vehicle.mileage.toLocaleString() : "",
+        }))
+        setExistingVehicles(vehicles)
+      } catch (error: any) {
+        console.error("[Vehicle Step] Failed to load vehicles:", error)
+        setVehiclesError(error.message || "Failed to load vehicles")
+      } finally {
+        setVehiclesLoading(false)
+      }
+    }
+
+    fetchVehicles()
+  }, [customerId])
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -209,7 +238,7 @@ export function VehicleSelectionStep({
     }
   }
 
-  const handleSelectExisting = (vehicle: typeof existingVehicles[0]) => {
+  const handleSelectExisting = (vehicle: ExistingVehicle) => {
     setCreationMode("select")
     onSelectVehicle({
       ...vehicle,
@@ -335,7 +364,17 @@ export function VehicleSelectionStep({
       {/* Select Existing */}
       {creationMode === "select" && (
         <div className="space-y-2">
-          {existingVehicles.length > 0 ? (
+          {vehiclesLoading ? (
+            <Card className="p-12 border-border text-center">
+              <Loader2 className="mx-auto text-muted-foreground mb-3 animate-spin" size={32} />
+              <p className="text-muted-foreground">Loading vehicles...</p>
+            </Card>
+          ) : vehiclesError ? (
+            <Card className="p-12 border-border text-center">
+              <p className="text-destructive mb-2">Error loading vehicles</p>
+              <p className="text-sm text-muted-foreground">{vehiclesError}</p>
+            </Card>
+          ) : existingVehicles.length > 0 ? (
             existingVehicles.map((vehicle) => {
               const isSelected = selectedVehicle?.id === vehicle.id
               return (

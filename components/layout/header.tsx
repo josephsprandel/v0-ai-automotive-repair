@@ -1,23 +1,16 @@
 "use client"
 
-import { Bell, Search, Clock, AlertCircle } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Bell, Clock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { GlobalSearch } from "@/components/layout/global-search"
 
 export function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between px-6 py-4">
-        {/* Search */}
+        {/* Voice-Enabled Search */}
         <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
-            <Input
-              type="text"
-              placeholder="Search ROs, customers, vehicles..."
-              className="pl-10 bg-card border-border placeholder:text-muted-foreground focus:ring-accent"
-            />
-          </div>
+          <GlobalSearch />
         </div>
 
         {/* Right section */}

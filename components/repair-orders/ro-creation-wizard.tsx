@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -62,7 +62,7 @@ export interface ServiceData {
   fees: LineItem[]
 }
 
-export function ROCreationWizard() {
+export function ROCreationWizard({ initialCustomerId }: { initialCustomerId?: string }) {
   const [currentStep, setCurrentStep] = useState(1)
   const [customerData, setCustomerData] = useState<CustomerData | null>(null)
   const [vehicleData, setVehicleData] = useState<VehicleData | null>(null)
@@ -71,6 +71,31 @@ export function ROCreationWizard() {
   const [isCreating, setIsCreating] = useState(false)
   const router = useRouter()
 
+  useEffect(() => {
+    if (!initialCustomerId) return
+
+    const fetchCustomer = async () => {
+      try {
+        const response = await fetch(`/api/customers/${initialCustomerId}`)
+        if (!response.ok) {
+          throw new Error("Failed to load customer")
+        }
+        const data = await response.json()
+        setCustomerData({
+          id: data.customer.id,
+          name: data.customer.customer_name,
+          phone: data.customer.phone_primary,
+          email: data.customer.email || "",
+          isNew: false,
+        })
+      } catch (error) {
+        console.error("[RO Wizard] Failed to preload customer:", error)
+      }
+    }
+
+    fetchCustomer()
+  }, [initialCustomerId])
+
   const canProceed = () => {
     switch (currentStep) {
       case 1:
@@ -78,7 +103,7 @@ export function ROCreationWizard() {
       case 2:
         return vehicleData !== null
       case 3:
-        return selectedServices.length > 0
+        return true
       case 4:
         return true
       default:
@@ -184,6 +209,33 @@ export function ROCreationWizard() {
       const woResult = await woResponse.json()
       console.log("[RO Wizard] Work order created:", woResult.work_order.ro_number)
 
+      // Step 4: Persist selected services to work_order_items
+      if (selectedServices.length > 0) {
+        console.log("[RO Wizard] Saving services to work order items...")
+        const workOrderId = woResult.work_order.id
+        for (const service of selectedServices) {
+          const laborHours = service.labor.reduce((sum, item) => sum + (item.quantity || 0), 0)
+          const laborRate = service.labor.length > 0 ? service.labor[0].unitPrice || 0 : 0
+          const unitPrice = service.parts.reduce((sum, item) => sum + (item.unitPrice || 0), 0)
+
+          await fetch(`/api/work-orders/${workOrderId}/items`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              item_type: "labor",
+              description: service.name,
+              notes: service.description || null,
+              quantity: 1,
+              unit_price: unitPrice,
+              labor_hours: laborHours,
+              labor_rate: laborRate || 160,
+              is_taxable: true,
+              display_order: 0,
+            }),
+          })
+        }
+      }
+
       // Success! Navigate to the new RO
       alert(`✅ Repair Order ${woResult.work_order.ro_number} created successfully!`)
       router.push(`/repair-orders/${woResult.work_order.id}`)
@@ -247,6 +299,7 @@ export function ROCreationWizard() {
           <CustomerSelectionStep
             selectedCustomer={customerData}
             onSelectCustomer={setCustomerData}
+            initialCustomerId={initialCustomerId}
           />
         )}
         {currentStep === 2 && (

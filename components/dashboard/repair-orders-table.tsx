@@ -1,61 +1,67 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, MessageSquare, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { MoreVertical, MessageSquare, CheckCircle2, Clock, AlertCircle, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+
+interface RepairOrder {
+  id: string
+  dbId: number
+  customer: string
+  vehicle: string
+  service: string
+  status: string
+  statusLabel: string
+  estimated: string
+  timeLeft: string
+}
 
 export function RepairOrdersTable() {
-  const repairOrders = [
-    {
-      id: "RO-4521",
-      customer: "John Mitchell",
-      vehicle: "2022 Tesla Model 3",
-      service: "Battery Diagnostic",
-      status: "awaiting_approval",
-      statusLabel: "Awaiting Approval",
-      estimated: "$1,250",
-      timeLeft: "45 min",
-    },
-    {
-      id: "RO-4520",
-      customer: "Sarah Johnson",
-      vehicle: "2020 BMW X5",
-      service: "Brake Pad Replacement",
-      status: "in_progress",
-      statusLabel: "In Progress",
-      estimated: "$450",
-      timeLeft: "1h 15m",
-    },
-    {
-      id: "RO-4519",
-      customer: "Mike Chen",
-      vehicle: "2019 Honda Civic",
-      service: "Oil Change + Filter",
-      status: "ready",
-      statusLabel: "Ready for Pickup",
-      estimated: "$89",
-      timeLeft: "Ready",
-    },
-    {
-      id: "RO-4518",
-      customer: "Emma Rodriguez",
-      vehicle: "2021 Ford F-150",
-      service: "Transmission Flush",
-      status: "completed",
-      statusLabel: "Completed",
-      estimated: "$350",
-      timeLeft: "Completed",
-    },
-    {
-      id: "RO-4517",
-      customer: "David Park",
-      vehicle: "2023 Hyundai Sonata",
-      service: "Air Conditioning Service",
-      status: "in_progress",
-      statusLabel: "In Progress",
-      estimated: "$280",
-      timeLeft: "2h 30m",
-    },
-  ]
+  const router = useRouter()
+  const [repairOrders, setRepairOrders] = useState<RepairOrder[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchRepairOrders = async () => {
+      try {
+        const response = await fetch('/api/work-orders?limit=10&status=open,in_progress,estimate,waiting_approval')
+        if (response.ok) {
+          const data = await response.json()
+          const orders = (data.work_orders || []).map((wo: any) => {
+            const statusMap: Record<string, { status: string; label: string }> = {
+              estimate: { status: 'awaiting_approval', label: 'Awaiting Approval' },
+              open: { status: 'in_progress', label: 'In Progress' },
+              in_progress: { status: 'in_progress', label: 'In Progress' },
+              waiting_approval: { status: 'awaiting_approval', label: 'Awaiting Approval' },
+              approved: { status: 'ready', label: 'Ready' },
+              completed: { status: 'completed', label: 'Completed' },
+            }
+            const mapped = statusMap[wo.state] || { status: wo.state, label: wo.state }
+
+            return {
+              id: wo.ro_number,
+              dbId: wo.id,
+              customer: wo.customer_name || 'Unknown',
+              vehicle: `${wo.year || ''} ${wo.make || ''} ${wo.model || ''}`.trim() || 'Unknown',
+              service: wo.label || 'General Service',
+              status: mapped.status,
+              statusLabel: mapped.label,
+              estimated: `$${parseFloat(wo.total || 0).toFixed(2)}`,
+              timeLeft: wo.state === 'completed' ? 'Completed' : 'TBD',
+            }
+          })
+          setRepairOrders(orders)
+        }
+      } catch (error) {
+        console.error('Error fetching repair orders:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRepairOrders()
+  }, [])
 
   const getStatusStyles = (status: string) => {
     switch (status) {
@@ -102,8 +108,25 @@ export function RepairOrdersTable() {
             </tr>
           </thead>
           <tbody>
-            {repairOrders.map((ro) => (
-              <tr key={ro.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+            {loading ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-8 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mt-2">Loading repair orders...</p>
+                </td>
+              </tr>
+            ) : repairOrders.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-8 text-center text-muted-foreground">
+                  No active repair orders
+                </td>
+              </tr>
+            ) : repairOrders.map((ro) => (
+              <tr
+                key={ro.id}
+                className="border-b border-border hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => router.push(`/repair-orders/${ro.dbId}`)}
+              >
                 <td className="px-6 py-4 font-semibold text-foreground">{ro.id}</td>
                 <td className="px-6 py-4">
                   <div>
@@ -122,10 +145,20 @@ export function RepairOrdersTable() {
                 <td className="px-6 py-4 text-right text-muted-foreground text-xs">{ro.timeLeft}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center gap-2">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-accent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-accent"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <MessageSquare size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <MoreVertical size={16} />
                     </Button>
                   </div>

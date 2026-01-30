@@ -11,6 +11,7 @@ import type { CustomerData } from "../ro-creation-wizard"
 interface CustomerSelectionStepProps {
   selectedCustomer: CustomerData | null
   onSelectCustomer: (customer: CustomerData | null) => void
+  initialCustomerId?: string
 }
 
 interface Customer {
@@ -21,7 +22,11 @@ interface Customer {
   customer_type: string
 }
 
-export function CustomerSelectionStep({ selectedCustomer, onSelectCustomer }: CustomerSelectionStepProps) {
+export function CustomerSelectionStep({
+  selectedCustomer,
+  onSelectCustomer,
+  initialCustomerId,
+}: CustomerSelectionStepProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -60,6 +65,31 @@ export function CustomerSelectionStep({ selectedCustomer, onSelectCustomer }: Cu
 
     return () => clearTimeout(debounce)
   }, [searchTerm, fetchCustomers])
+
+  useEffect(() => {
+    if (!initialCustomerId) return
+
+    const fetchInitialCustomer = async () => {
+      try {
+        const response = await fetch(`/api/customers/${initialCustomerId}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch customer")
+        }
+        const data = await response.json()
+        onSelectCustomer({
+          id: data.customer.id,
+          name: data.customer.customer_name,
+          phone: data.customer.phone_primary,
+          email: data.customer.email || "",
+          isNew: false,
+        })
+      } catch (error) {
+        console.error("Failed to preload customer:", error)
+      }
+    }
+
+    fetchInitialCustomer()
+  }, [initialCustomerId, onSelectCustomer])
 
   const handleSelectExisting = (customer: Customer) => {
     setIsCreatingNew(false)

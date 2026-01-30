@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, Phone, Mail, MapPin, Plus, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { CustomerCreateDialog } from "./customer-create-dialog"
 
 interface Customer {
@@ -29,6 +30,7 @@ interface Customer {
 }
 
 export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: string) => void }) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,6 +85,14 @@ export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: s
     return parts.join(", ") || "No address on file"
   }
 
+  const handleCardClick = (id: string) => {
+    if (onSelectCustomer) {
+      onSelectCustomer(id)
+      return
+    }
+    router.push(`/customers/${id}`)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -128,7 +138,7 @@ export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: s
             <Card
               key={customer.id}
               className="p-5 border-border cursor-pointer hover:bg-muted/30 transition-colors group"
-              onClick={() => onSelectCustomer?.(customer.id)}
+              onClick={() => handleCardClick(customer.id)}
             >
               <div className="flex items-start justify-between gap-4">
                 {/* Main info */}

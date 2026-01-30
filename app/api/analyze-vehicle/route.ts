@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
  */
 async function classifyImage(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.1
     }
@@ -44,7 +44,7 @@ Return ONLY the category name (one word).`
  */
 async function extractDoorJambData(imageBase64: string) {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       maxOutputTokens: 2000,
       temperature: 0.1
@@ -97,7 +97,7 @@ Return ONLY valid JSON with null for missing fields:
  */
 async function extractOdometer(imageBase64: string): Promise<string> {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.1
     }
@@ -128,7 +128,7 @@ If not found, return: NOT_FOUND`
  */
 async function extractLicensePlate(imageBase64: string) {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.1
     }
@@ -171,7 +171,7 @@ Return ONLY valid JSON.`
  */
 async function extractPaintColor(imageBase64: string): Promise<string | null> {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.1
     }
@@ -202,7 +202,7 @@ Return ONLY the color name.`
  */
 async function extractVehicleInfo(imageBase64: string) {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.1
     }

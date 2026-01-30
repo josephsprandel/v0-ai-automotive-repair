@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox"
 import type { ServiceData, LineItem } from "./ro-creation-wizard"
 import { EditableServiceCard, createLineItem } from "./editable-service-card"
+import type { LineItemCategory } from "./editable-service-card"
 
 // Workflow stages - MOVED OUTSIDE to prevent re-creation on every render
 const WORKFLOW_STAGES = [
@@ -71,70 +72,70 @@ const WORKFLOW_STAGES = [
 ]
 
 /**
- * Convert database work_order_items to ServiceData format
- * Maps flat item rows to grouped service structure
+ * Convert database services with items to ServiceData format
  */
-function convertItemsToServices(items: any[]): ServiceData[] {
-  // Group items by a synthetic service grouping (for now all in one service)
-  // TODO: Add service_group_id to work_order_items for proper grouping
-  
-  if (items.length === 0) return []
-  
-  const services: ServiceData[] = []
-  const serviceMap = new Map<string, ServiceData>()
-  
-  items.forEach(item => {
-    // For now, group by item_type to create separate "services"
-    const serviceKey = item.description || 'Unnamed Service'
-    
-    if (!serviceMap.has(serviceKey)) {
-      serviceMap.set(serviceKey, {
-        id: `svc-${item.id}`,
-        name: item.description,
-        description: item.notes || '',
-        estimatedCost: parseFloat(item.line_total || 0),
-        estimatedTime: item.labor_hours ? `${item.labor_hours} hrs` : 'TBD',
-        category: item.item_type === 'labor' ? 'Labor' : item.item_type === 'part' ? 'Parts' : 'Other',
-        status: 'pending',
-        parts: [],
-        labor: [],
-        sublets: [],
-        hazmat: [],
-        fees: [],
-      })
-    }
-    
-    const service = serviceMap.get(serviceKey)!
-    
-    // Add to appropriate category
-    if (item.item_type === 'labor') {
-      service.labor.push({
-        id: `l${item.id}`,
-        description: item.description,
-        quantity: parseFloat(item.labor_hours || 0),
-        unitPrice: parseFloat(item.labor_rate || 160),
+function convertDbServicesToServiceData(dbServices: any[]): ServiceData[] {
+  return dbServices.map((svc) => {
+    const items = svc.items || []
+
+    const parts: LineItem[] = []
+    const labor: LineItem[] = []
+    const sublets: LineItem[] = []
+    const hazmat: LineItem[] = []
+    const fees: LineItem[] = []
+
+    items.forEach((item: any) => {
+      const lineItem: LineItem = {
+        id: `${item.item_type?.[0] || 'i'}${item.id}`,
+        description: item.description || '',
+        quantity: parseFloat(item.item_type === 'labor' ? item.labor_hours || 0 : item.quantity || 1),
+        unitPrice: parseFloat(item.item_type === 'labor' ? item.labor_rate || 160 : item.unit_price || 0),
         total: parseFloat(item.line_total || 0),
-      })
-    } else if (item.item_type === 'part') {
-      service.parts.push({
-        id: `p${item.id}`,
-        description: item.description,
-        quantity: parseFloat(item.quantity || 1),
-        unitPrice: parseFloat(item.unit_price || 0),
-        total: parseFloat(item.line_total || 0),
-      })
-    } else if (item.item_type === 'sublet') {
-      service.sublets.push({
-        id: `s${item.id}`,
-        description: item.description,
-        quantity: parseFloat(item.quantity || 1),
-        unitPrice: parseFloat(item.unit_price || 0),
-        total: parseFloat(item.line_total || 0),
-      })
+      }
+
+      switch (item.item_type) {
+        case 'part':
+          parts.push(lineItem)
+          break
+        case 'labor':
+          labor.push(lineItem)
+          break
+        case 'sublet':
+          sublets.push(lineItem)
+          break
+        case 'hazmat':
+          hazmat.push(lineItem)
+          break
+        case 'fee':
+          fees.push(lineItem)
+          break
+        default:
+          parts.push(lineItem)
+      }
+    })
+
+    const totalCost = parts.reduce((s, i) => s + i.total, 0)
+      + labor.reduce((s, i) => s + i.total, 0)
+      + sublets.reduce((s, i) => s + i.total, 0)
+      + hazmat.reduce((s, i) => s + i.total, 0)
+      + fees.reduce((s, i) => s + i.total, 0)
+
+    return {
+      id: `svc-${svc.id}`,
+      name: svc.title || 'Unnamed Service',
+      description: svc.description || '',
+      estimatedCost: totalCost,
+      estimatedTime: svc.labor_hours ? `${svc.labor_hours} hrs` : 'TBD',
+      category: svc.category || svc.service_type || 'Service',
+      status: svc.status === 'NOT_STARTED' ? 'pending' : svc.status === 'COMPLETED' ? 'completed' : 'in_progress',
+      technician: undefined,
+      parts,
+      labor,
+      sublets,
+      hazmat,
+      fees,
     }
   })
-  
-  return Array.from(serviceMap.values())
 }
 
 interface WorkOrder {
@@ -174,6 +175,8 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [statusSaving, setStatusSaving] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [services, setServices] = useState<ServiceData[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -210,30 +213,199 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
     setIsEditing(false)
   }, [])
 
-  const updateService = useCallback((updated: ServiceData) => {
-    // Update local state immediately for responsive UI
-    setServices(prev => prev.map((s) => (s.id === updated.id ? updated : s)))
-    // TODO: Call API to update in database
+  const showToast = useCallback((message: string, type: "success" | "error") => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3500)
   }, [])
+
+  const updateStatus = useCallback(
+    async (nextStatus: string, options?: { successMessage?: string }) => {
+      if (!workOrder) return
+      const previousStatus = workOrder.state
+
+      setWorkOrder({ ...workOrder, state: nextStatus })
+      setStatusSaving(true)
+
+      try {
+        const response = await fetch(`/api/work-orders/${workOrder.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(errorText || "Failed to update status")
+        }
+
+        const data = await response.json()
+        setWorkOrder((prev) => (prev ? { ...prev, state: data.work_order.state } : prev))
+        showToast(options?.successMessage || "Status updated", "success")
+      } catch (err: any) {
+        setWorkOrder((prev) => (prev ? { ...prev, state: previousStatus } : prev))
+        showToast(err.message || "Failed to update status", "error")
+      } finally {
+        setStatusSaving(false)
+      }
+    },
+    [workOrder, showToast]
+  )
+
+  const handleStatusChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      updateStatus(event.target.value)
+    },
+    [updateStatus]
+  )
+
+  const handleApprove = useCallback(async () => {
+    if (!workOrder) return
+    if (!window.confirm("Approve this repair order?")) return
+    await updateStatus("approved", { successMessage: "Repair order approved" })
+  }, [workOrder, updateStatus])
+
+  const handleComplete = useCallback(async () => {
+    if (!workOrder) return
+    if (!window.confirm("Mark this repair order as complete?")) return
+    await updateStatus("completed", { successMessage: "Repair order completed" })
+  }, [workOrder, updateStatus])
+
+  const handleCancel = useCallback(async () => {
+    if (!workOrder) return
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this repair order? This action cannot be undone."
+    )
+    if (!confirmed) return
+    await updateStatus("cancelled", { successMessage: "Repair order cancelled" })
+  }, [workOrder, updateStatus])
+
+  const updateService = useCallback(async (updated: ServiceData) => {
+    if (!workOrder?.id) {
+      setServices(prev => prev.map((s) => (s.id === updated.id ? updated : s)))
+      return
+    }
+
+    const previous = services.find((s) => s.id === updated.id)
+    setServices(prev => prev.map((s) => (s.id === updated.id ? updated : s)))
+
+    if (!previous) return
+
+    // Extract database service_id from the service id (e.g., "svc-123" -> 123)
+    const dbServiceId = parseInt(updated.id.replace('svc-', ''), 10)
+
+    // Update the service record itself (title, description)
+    await fetch(`/api/work-orders/${workOrder.id}/services`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: dbServiceId,
+        title: updated.name,
+        description: updated.description,
+      }),
+    })
+
+    const categories: LineItemCategory[] = ["parts", "labor", "sublets", "hazmat", "fees"]
+    const categoryTypeMap: Record<LineItemCategory, string> = {
+      parts: "part",
+      labor: "labor",
+      sublets: "sublet",
+      hazmat: "hazmat",
+      fees: "fee",
+    }
+    const categoryPrefixMap: Record<LineItemCategory, string> = {
+      parts: "p",
+      labor: "l",
+      sublets: "s",
+      hazmat: "h",
+      fees: "f",
+    }
+
+    const parseDbId = (id: string) => {
+      const match = id.match(/^[a-z](\d+)$/)
+      return match ? parseInt(match[1], 10) : null
+    }
+
+    const updatedWithIds: ServiceData = { ...updated }
+
+    for (const category of categories) {
+      const prevItems = previous[category] || []
+      const nextItems = updated[category] || []
+      const nextIds = new Set(nextItems.map((item) => item.id))
+
+      for (const prevItem of prevItems) {
+        if (!nextIds.has(prevItem.id)) {
+          const dbId = parseDbId(prevItem.id)
+          if (dbId) {
+            await fetch(`/api/work-orders/${workOrder.id}/items?item_id=${dbId}`, {
+              method: "DELETE",
+            })
+          }
+        }
+      }
+
+      const syncedItems: LineItem[] = []
+      for (const item of nextItems) {
+        const dbId = parseDbId(item.id)
+        const payload: Record<string, any> = {
+          item_type: categoryTypeMap[category],
+          description: item.description,
+          notes: updated.description || null,
+          quantity: item.quantity || 1,
+          unit_price: item.unitPrice || 0,
+          labor_hours: category === "labor" ? item.quantity || 0 : null,
+          labor_rate: category === "labor" ? item.unitPrice || 0 : null,
+          is_taxable: true,
+          display_order: 0,
+          service_id: dbServiceId,
+        }
+
+        if (dbId) {
+          await fetch(`/api/work-orders/${workOrder.id}/items`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ item_id: dbId, ...payload }),
+          })
+          syncedItems.push(item)
+        } else {
+          const response = await fetch(`/api/work-orders/${workOrder.id}/items`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+          if (response.ok) {
+            const data = await response.json()
+            const prefix = categoryPrefixMap[category]
+            syncedItems.push({ ...item, id: `${prefix}${data.item.id}` })
+          } else {
+            syncedItems.push(item)
+          }
+        }
+      }
+
+      updatedWithIds[category] = syncedItems
+    }
+
+    setServices(prev => prev.map((s) => (s.id === updated.id ? updatedWithIds : s)))
+  }, [services, workOrder])
 
   const removeService = useCallback(async (id: string) => {
     if (!workOrder?.id) return
-    
+
     console.log('=== DELETING SERVICE ===')
     console.log('Service ID:', id)
-    
-    // Extract database item ID from the service id
-    const dbItemId = id.replace('svc-', '')
-    
+
+    // Extract database service ID from the service id
+    const dbServiceId = id.replace('svc-', '')
+
     try {
-      const response = await fetch(`/api/work-orders/${workOrder.id}/items?item_id=${dbItemId}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/work-orders/${workOrder.id}/services?service_id=${dbServiceId}`, {
+        method: 'DELETE',
       })
-      
+
       if (response.ok) {
         console.log('✓ Deleted from database')
         // Remove from local state
-        setServices(prev => prev.filter((s) => s.id !== id))
+        setServices((prev) => prev.filter((s) => s.id !== id))
       } else {
         console.error('✗ Failed to delete from database')
       }
@@ -244,35 +416,29 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
 
   const addService = useCallback(async () => {
     if (!workOrder?.id) return
-    
+
     console.log('=== ADDING NEW SERVICE ===')
-    
+
     try {
-      const response = await fetch(`/api/work-orders/${workOrder.id}/items`, {
+      const response = await fetch(`/api/work-orders/${workOrder.id}/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          item_type: 'labor',
-          description: 'New Service',
-          notes: '',
-          quantity: 1,
-          unit_price: 0,
-          labor_hours: 0,
-          labor_rate: 160,
-          is_taxable: false,
-          display_order: services.length
-        })
+          title: 'New Service',
+          description: '',
+          display_order: services.length,
+        }),
       })
-      
+
       if (response.ok) {
         const data = await response.json()
-        console.log('✓ Saved to database - ID:', data.item?.id)
-        
-        // Reload all items from database
-        const itemsResponse = await fetch(`/api/work-orders/${workOrder.id}/items`)
-        if (itemsResponse.ok) {
-          const itemsData = await itemsResponse.json()
-          const loadedServices = convertItemsToServices(itemsData.items || [])
+        console.log('✓ Saved to database - ID:', data.service?.id)
+
+        // Reload services from database
+        const servicesResponse = await fetch(`/api/work-orders/${workOrder.id}/services`)
+        if (servicesResponse.ok) {
+          const servicesData = await servicesResponse.json()
+          const loadedServices = convertDbServicesToServiceData(servicesData.services || [])
           setServices(loadedServices)
         }
       } else {
@@ -460,18 +626,39 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
 
   const addSelectedAiServices = useCallback(async () => {
     if (!workOrder?.id || selectedAiServices.length === 0) return
-    
+
     console.log('=== SAVING AI SERVICES TO WORK ORDER ===')
     console.log('Selected services:', selectedAiServices.length)
-    
+
     setAiDialogOpen(false)
-    
-    // Save each selected service to work_order_items
+
+    // Save each selected service - create service record first, then add labor item
     for (const aiService of selectedAiServices) {
       try {
-        console.log('Saving service:', aiService.service_name)
-        
-        // Create labor item for the service
+        console.log('Creating service:', aiService.service_name)
+
+        // Step 1: Create service record
+        const serviceResponse = await fetch(`/api/work-orders/${workOrder.id}/services`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: aiService.service_name,
+            description: aiService.service_description || '',
+            display_order: services.length,
+            ai_generated: true,
+          }),
+        })
+
+        if (!serviceResponse.ok) {
+          console.error('✗ Failed to create service:', aiService.service_name)
+          continue
+        }
+
+        const serviceData = await serviceResponse.json()
+        const serviceId = serviceData.service?.id
+        console.log('✓ Service created - ID:', serviceId)
+
+        // Step 2: Add labor item linked to the service
         const laborResponse = await fetch(`/api/work-orders/${workOrder.id}/items`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -484,39 +671,37 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
             labor_hours: aiService.estimated_labor_hours || 0,
             labor_rate: 160,
             is_taxable: false,
-            display_order: services.length
-          })
+            display_order: 0,
+            service_id: serviceId,
+          }),
         })
-        
+
         if (laborResponse.ok) {
           const data = await laborResponse.json()
-          console.log('✓ Saved:', aiService.service_name, '- DB ID:', data.item?.id)
+          console.log('✓ Labor item added - DB ID:', data.item?.id)
         } else {
           const errorText = await laborResponse.text()
-          console.error('✗ Failed to save:', aiService.service_name)
-          console.error('  Status:', laborResponse.status)
-          console.error('  Error:', errorText)
+          console.error('✗ Failed to add labor item:', errorText)
         }
-        
       } catch (error) {
         console.error('Error saving service:', error)
       }
     }
-    
-    // Reload work order items from database
-    console.log('Reloading work order items...')
+
+    // Reload services from database
+    console.log('Reloading services...')
     try {
-      const itemsResponse = await fetch(`/api/work-orders/${workOrder.id}/items`)
-      if (itemsResponse.ok) {
-        const itemsData = await itemsResponse.json()
-        console.log('✓ Reloaded', itemsData.items?.length || 0, 'items')
-        const loadedServices = convertItemsToServices(itemsData.items || [])
+      const servicesResponse = await fetch(`/api/work-orders/${workOrder.id}/services`)
+      if (servicesResponse.ok) {
+        const servicesData = await servicesResponse.json()
+        console.log('✓ Reloaded', servicesData.services?.length || 0, 'services')
+        const loadedServices = convertDbServicesToServiceData(servicesData.services || [])
         setServices(loadedServices)
       }
     } catch (error) {
-      console.error('Error reloading items:', error)
+      console.error('Error reloading services:', error)
     }
-    
+
     console.log('=== SAVE COMPLETE ===')
   }, [selectedAiServices, workOrder, services.length])
 
@@ -573,17 +758,16 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
         setWorkOrder(woData.work_order)
         console.log('✓ Work order loaded')
         
-        // Fetch work order items
-        const itemsResponse = await fetch(`/api/work-orders/${roId}/items`)
-        if (itemsResponse.ok) {
-          const itemsData = await itemsResponse.json()
-          console.log('✓ Loaded', itemsData.items?.length || 0, 'items from database')
-          
-          // Convert database items to services format
-          const loadedServices = convertItemsToServices(itemsData.items || [])
+        // Fetch services with items
+        const servicesResponse = await fetch(`/api/work-orders/${roId}/services`)
+        if (servicesResponse.ok) {
+          const servicesData = await servicesResponse.json()
+          console.log('✓ Loaded', servicesData.services?.length || 0, 'services from database')
+
+          const loadedServices = convertDbServicesToServiceData(servicesData.services || [])
           setServices(loadedServices)
         } else {
-          console.log('No items found for this work order')
+          console.log('No services found for this work order')
         }
         
       } catch (err: any) {
@@ -631,6 +815,30 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
       setDragOverIndex(index)
     }
   }
+
+  const statusLabelMap: Record<string, string> = {
+    draft: "Draft",
+    open: "Open",
+    in_progress: "In Progress",
+    waiting_approval: "Waiting Approval",
+    approved: "Approved",
+    completed: "Completed",
+    cancelled: "Cancelled",
+  }
+
+  const statusBadgeMap: Record<string, string> = {
+    draft: "bg-muted text-muted-foreground border-border",
+    open: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    in_progress: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    waiting_approval: "bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/20",
+    approved: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/20",
+    completed: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/20",
+    cancelled: "bg-muted text-muted-foreground border-border",
+  }
+
+  const isApproved = workOrder.state === "approved"
+  const isCompleted = workOrder.state === "completed"
+  const isCancelled = workOrder.state === "cancelled"
 
   return (
     <div className="space-y-4">
@@ -709,15 +917,21 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
                 id="ro_status"
                 name="ro_status"
                 className="w-full px-2 py-1 text-sm rounded-md bg-card border border-border text-foreground"
+                value={workOrder.state}
+                onChange={handleStatusChange}
+                disabled={statusSaving}
               >
-                <option value="awaiting_approval">Awaiting Approval</option>
+                <option value="draft">Draft</option>
+                <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
-                <option value="ready">Ready</option>
+                <option value="waiting_approval">Waiting Approval</option>
+                <option value="approved">Approved</option>
                 <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             ) : (
-              <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/20">
-                Awaiting Approval
+              <Badge className={statusBadgeMap[workOrder.state] || "bg-muted text-muted-foreground border-border"}>
+                {statusLabelMap[workOrder.state] || workOrder.state}
               </Badge>
             )}
           </Card>
@@ -835,13 +1049,26 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Button className="gap-2">Approve & Complete</Button>
-          <Button variant="outline" className="bg-transparent gap-2">
-            Request More Info
+          <Button
+            className="gap-2"
+            onClick={handleApprove}
+            disabled={statusSaving || isApproved || isCompleted || isCancelled}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="outline"
+            className="bg-transparent gap-2"
+            onClick={handleComplete}
+            disabled={statusSaving || isCompleted || isCancelled}
+          >
+            Complete
           </Button>
           <Button
             variant="outline"
             className="bg-transparent text-destructive border-destructive/30 hover:bg-destructive/10 gap-2"
+            onClick={handleCancel}
+            disabled={statusSaving || isCancelled}
           >
             Cancel RO
           </Button>
@@ -864,6 +1091,18 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
           </div>
         )}
       </div>
+
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-50 rounded-md px-4 py-3 text-sm shadow-lg border ${
+            toast.type === "success"
+              ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+              : "bg-destructive/10 text-destructive border-destructive/20"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
 
       {/* AI Recommendations Dialog */}
       <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
