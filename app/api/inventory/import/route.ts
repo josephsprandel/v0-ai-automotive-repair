@@ -87,9 +87,10 @@ export async function POST(request: NextRequest) {
         // Parse numeric fields with defaults - ShopWare column names
         const cost = parseFloat((record as any).Cost || '0');
         const price = parseFloat((record as any).MSRP || (record as any).Price || '0');
-        const qtyOnHand = parseFloat((record as any)['Quantity On Hand'] || '0');
+        // Quantity can be decimal (e.g., 21.5 quarts of oil), round to nearest integer
+        const qtyOnHand = Math.round(parseFloat((record as any)['Quantity On Hand'] || '0'));
         const qtyAvailable = qtyOnHand; // ShopWare doesn't separate on-hand vs available
-        const reorderPoint = parseInt((record as any)['Min Stock'] || '0');
+        const reorderPoint = Math.round(parseFloat((record as any)['Min Stock'] || '0'));
         
         // UPSERT: Insert new or update existing
         const result = await client.query(`
