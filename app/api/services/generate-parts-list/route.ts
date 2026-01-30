@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { checkInventory } from '@/lib/parts/check-inventory'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -144,15 +145,41 @@ Service-specific guidance:
 
     console.log('✓ Generated parts for', partsList.services.length, 'services')
 
-    // For each part, look up pricing via PartsTech (parallel for speed)
-    console.log('Looking up pricing via PartsTech...')
+    // For each part, check inventory FIRST, then fall back to PartsTech (parallel for speed)
+    console.log('Checking inventory and pricing...')
     
     const servicesWithPricing = await Promise.all(
       partsList.services.map(async (service: any) => {
         const partsWithPricing = await Promise.all(
           service.parts.map(async (part: any) => {
             try {
-              // Call PartsTech search API
+              // STEP 1: Check inventory first (fast, local database)
+              const inventoryParts = await checkInventory(part.description)
+              
+              // STEP 2: If found in inventory, return inventory options
+              if (inventoryParts.length > 0) {
+                console.log(`✓ Found ${inventoryParts.length} inventory matches for "${part.description}"`)
+                return {
+                  ...part,
+                  source: 'inventory',
+                  pricingOptions: inventoryParts.map(inv => ({
+                    partNumber: inv.partNumber,
+                    description: inv.description,
+                    brand: inv.vendor,
+                    vendor: inv.vendor,
+                    cost: inv.cost,
+                    retailPrice: inv.price,
+                    inStock: true,
+                    quantity: inv.quantityAvailable,
+                    location: inv.location,
+                    binLocation: inv.binLocation,
+                    isInventory: true // Flag for UI styling
+                  }))
+                }
+              }
+              
+              // STEP 3: Not in inventory, search PartsTech as fallback
+              console.log(`⚠️ Not in inventory, searching PartsTech for "${part.description}"`)
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
               const searchResponse = await fetch(`${baseUrl}/api/parts/search`, {
                 method: 'POST',
@@ -160,7 +187,7 @@ Service-specific guidance:
                 body: JSON.stringify({
                   vin: vehicle.vin,
                   searchTerm: part.description,
-                  mode: 'manual' // Only show in-stock parts
+                  mode: 'manual'
                 })
               })
 
@@ -168,6 +195,7 @@ Service-specific guidance:
                 console.log(`⚠️ PartsTech search failed for "${part.description}"`)
                 return {
                   ...part,
+                  source: 'none',
                   pricingOptions: []
                 }
               }
@@ -186,7 +214,8 @@ Service-specific guidance:
                     retailPrice: p.list_price || p.retail_price || p.price * 1.4 || 0,
                     inStock: p.quantity_available > 0,
                     quantity: p.quantity_available || 0,
-                    images: p.images || []
+                    images: p.images || [],
+                    isInventory: false
                   }))
                 ) || []
 
@@ -204,16 +233,18 @@ Service-specific guidance:
                 ...aftermarketParts.slice(0, 3)
               ]
 
-              console.log(`✓ Found ${pricingOptions.length} options for "${part.description}"`)
+              console.log(`✓ Found ${pricingOptions.length} PartsTech options for "${part.description}"`)
 
               return {
                 ...part,
+                source: pricingOptions.length > 0 ? 'partstech' : 'none',
                 pricingOptions
               }
             } catch (error: any) {
               console.error(`Failed to get pricing for "${part.description}":`, error.message)
               return {
                 ...part,
+                source: 'error',
                 pricingOptions: []
               }
             }

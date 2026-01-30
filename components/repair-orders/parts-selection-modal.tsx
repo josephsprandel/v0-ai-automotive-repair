@@ -20,6 +20,9 @@ interface PartWithPricing {
     retailPrice: number
     inStock: boolean
     quantity?: number
+    isInventory?: boolean
+    location?: string
+    binLocation?: string
   }>
   selectedOption?: any
 }
@@ -118,14 +121,19 @@ export function PartsSelectionModal({
                       <div className="space-y-2">
                         {part.pricingOptions.map((option, oIdx) => {
                           const isSelected = selectedParts[`${sIdx}-${pIdx}`]?.partNumber === option.partNumber || (!selectedParts[`${sIdx}-${pIdx}`] && oIdx === 0)
+                          const isInventory = option.isInventory === true
                           
                           return (
                             <label
                               key={oIdx}
                               className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${
                                 isSelected 
-                                  ? 'border-primary bg-primary/5 shadow-sm' 
-                                  : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                                  ? isInventory
+                                    ? 'border-green-500 bg-green-50 dark:bg-green-950/20 shadow-sm'
+                                    : 'border-primary bg-primary/5 shadow-sm'
+                                  : isInventory
+                                    ? 'border-green-200 hover:border-green-400 hover:bg-green-50/50 dark:border-green-800 dark:hover:bg-green-950/10'
+                                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
                               }`}
                             >
                               <div className="flex items-center mr-3">
