@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { Search, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react"
 import Link from "next/link"
 
@@ -32,22 +33,34 @@ export function PartsInventoryTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [parts, setParts] = useState<Part[]>([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
   const [sortBy, setSortBy] = useState<SortColumn>('part_number')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [currentPage, setCurrentPage] = useState(1)
   const [totalParts, setTotalParts] = useState(0)
+  const itemsPerPage = 50
 
   useEffect(() => {
     loadParts()
+  }, [searchTerm, sortBy, sortOrder, currentPage])
+
+  // Reset to page 1 when search or sort changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
   }, [searchTerm, sortBy, sortOrder])
 
   async function loadParts() {
     try {
       setLoading(true)
+      const offset = (currentPage - 1) * itemsPerPage
       const params = new URLSearchParams({
         search: searchTerm,
         sortBy,
         sortOrder,
-        limit: '100'
+        limit: itemsPerPage.toString(),
+        offset: offset.toString()
       })
 
       const response = await fetch(`/api/inventory/parts?${params}`)
@@ -89,6 +102,79 @@ export function PartsInventoryTab() {
     return { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' }
   }
 
+  async function handleExport() {
+    try {
+      setExporting(true)
+      
+      // Fetch ALL parts (not just current page) for export
+      const params = new URLSearchParams({
+        search: searchTerm,
+        sortBy,
+        sortOrder,
+        limit: '100000' // Large number to get all results
+      })
+
+      const response = await fetch(`/api/inventory/parts?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch parts')
+      
+      const data = await response.json()
+      const allParts = data.parts || []
+
+      // Convert to CSV
+      const headers = [
+        'Part Number',
+        'Description',
+        'Vendor',
+        'Cost',
+        'Retail Price',
+        'Qty On Hand',
+        'Qty Available',
+        'Reorder Point',
+        'Location',
+        'Bin Location',
+        'Category',
+        'Notes'
+      ]
+
+      const csvRows = [
+        headers.join(','),
+        ...allParts.map((part: Part) => [
+          `"${part.part_number}"`,
+          `"${part.description.replace(/"/g, '""')}"`,
+          `"${part.vendor}"`,
+          part.cost.toFixed(2),
+          part.price.toFixed(2),
+          part.quantity_on_hand,
+          part.quantity_available,
+          part.reorder_point,
+          `"${part.location}"`,
+          `"${part.bin_location || ''}"`,
+          `"${part.category}"`,
+          `"${(part.notes || '').replace(/"/g, '""')}"`
+        ].join(','))
+      ]
+
+      const csvContent = csvRows.join('\n')
+      
+      // Download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `parts_inventory_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Failed to export parts inventory')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Search and Actions */}
@@ -108,9 +194,18 @@ export function PartsInventoryTab() {
             Import CSV
           </Button>
         </Link>
-        <Button variant="outline" className="gap-2 bg-transparent">
-          <Download size={16} />
-          Export
+        <Button 
+          variant="outline" 
+          className="gap-2 bg-transparent"
+          onClick={handleExport}
+          disabled={exporting || totalParts === 0}
+        >
+          {exporting ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Download size={16} />
+          )}
+          {exporting ? 'Exporting...' : 'Export'}
         </Button>
       </div>
 
@@ -258,6 +353,23 @@ export function PartsInventoryTab() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && parts.length > 0 && (
+        <div className="flex items-center justify-between">
+          <PaginationInfo
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalParts / itemsPerPage)}
+            totalItems={totalParts}
+            itemsPerPage={itemsPerPage}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalParts / itemsPerPage)}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </div>

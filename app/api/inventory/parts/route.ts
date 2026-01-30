@@ -78,6 +78,17 @@ export async function GET(request: NextRequest) {
     // Execute query
     const result = await pool.query(query, params);
 
+    // Convert numeric fields to numbers (PostgreSQL returns them as strings)
+    const parts = result.rows.map(row => ({
+      ...row,
+      cost: parseFloat(row.cost) || 0,
+      price: parseFloat(row.price) || 0,
+      quantity_on_hand: parseInt(row.quantity_on_hand) || 0,
+      quantity_available: parseInt(row.quantity_available) || 0,
+      quantity_allocated: parseInt(row.quantity_allocated) || 0,
+      reorder_point: parseInt(row.reorder_point) || 0
+    }));
+
     // Get total count for pagination
     let countQuery = 'SELECT COUNT(*) as total FROM parts_inventory WHERE 1=1';
     const countParams: any[] = [];
@@ -97,12 +108,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      parts: result.rows,
+      parts: parts,
       pagination: {
         total,
         limit,
         offset,
-        hasMore: offset + result.rows.length < total
+        hasMore: offset + parts.length < total
       }
     });
 
