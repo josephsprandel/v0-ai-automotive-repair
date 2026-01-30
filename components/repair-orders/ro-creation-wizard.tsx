@@ -44,6 +44,11 @@ export interface LineItem {
   quantity: number
   unitPrice: number
   total: number
+  part_id?: number // Optional: ID from parts_inventory table
+  part_number?: string // Optional: Part number for display
+  vendor?: string // Optional: Vendor/brand name
+  cost?: number // Optional: Part cost
+  location?: string // Optional: Warehouse location
 }
 
 export interface ServiceData {

@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import type { ServiceData, LineItem } from "./ro-creation-wizard"
 import { PartsCatalogModal } from "./parts-catalog-modal"
+import { PartDetailsModal } from "./part-details-modal"
 
 interface EditableServiceCardProps {
   service: ServiceData
@@ -70,6 +71,7 @@ interface DraggableLineItemProps {
   onDragEnd: () => void
   isDragging: boolean
   onFindPart?: () => void
+  onClickPart?: () => void
 }
 
 function DraggableLineItem({
@@ -86,6 +88,7 @@ function DraggableLineItem({
   onDragEnd,
   isDragging,
   onFindPart,
+  onClickPart,
 }: DraggableLineItemProps) {
   const handleUpdate = (field: keyof LineItem, value: string | number) => {
     const updated = { ...item, [field]: value }
@@ -114,8 +117,17 @@ function DraggableLineItem({
       <Input
         value={item.description}
         onChange={(e) => handleUpdate("description", e.target.value)}
+        onClick={(e) => {
+          if (category === "parts" && onClickPart) {
+            e.stopPropagation()
+            onClickPart()
+          }
+        }}
         placeholder={`${categoryLabel} description`}
-        className="flex-1 h-8 text-sm bg-background border-border"
+        className={`flex-1 h-8 text-sm bg-background border-border ${
+          category === "parts" && onClickPart ? "cursor-pointer hover:bg-muted/50" : ""
+        }`}
+        readOnly={category === "parts" && !!onClickPart}
       />
       {category === "parts" && onFindPart && (
         <Button
@@ -179,9 +191,10 @@ interface LineItemSectionProps {
   items: LineItem[]
   onUpdateItems: (items: LineItem[]) => void
   onFindPart?: (index: number) => void
+  onClickPart?: (index: number) => void
 }
 
-function LineItemSection({ category, label, icon: Icon, color, items, onUpdateItems, onFindPart }: LineItemSectionProps) {
+function LineItemSection({ category, label, icon: Icon, color, items, onUpdateItems, onFindPart, onClickPart }: LineItemSectionProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
@@ -260,6 +273,7 @@ function LineItemSection({ category, label, icon: Icon, color, items, onUpdateIt
               onDragEnd={handleDragEnd}
               isDragging={dragIndex === index}
               onFindPart={onFindPart ? () => onFindPart(index) : undefined}
+              onClickPart={onClickPart ? () => onClickPart(index) : undefined}
             />
           ))}
         </div>
@@ -279,6 +293,9 @@ export function EditableServiceCard({
   const [isExpanded, setIsExpanded] = useState(false)
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
   const [catalogLineItemIndex, setCatalogLineItemIndex] = useState<number | undefined>(undefined)
+  const [isPartDetailsOpen, setIsPartDetailsOpen] = useState(false)
+  const [editingLineItem, setEditingLineItem] = useState<LineItem | null>(null)
+  const [editingLineItemIndex, setEditingLineItemIndex] = useState<number | null>(null)
 
   const calculateTotal = (svc: ServiceData) => {
     const partsTotal = svc.parts.reduce((sum, item) => sum + item.total, 0)
@@ -312,6 +329,12 @@ export function EditableServiceCard({
     newLineItem.unitPrice = part.price
     newLineItem.quantity = 1
     newLineItem.total = part.price
+    // Store inventory part details
+    newLineItem.part_id = parseInt(part.id)
+    newLineItem.part_number = part.partNumber
+    newLineItem.vendor = part.manufacturer
+    newLineItem.cost = part.price / 2 // Default to 50% markup, will be editable
+    newLineItem.location = part.location
     
     // If catalogLineItemIndex is set, replace that line item, otherwise add new
     let updatedParts
@@ -330,6 +353,23 @@ export function EditableServiceCard({
   const handleOpenCatalog = (index?: number) => {
     setCatalogLineItemIndex(index)
     setIsCatalogOpen(true)
+  }
+
+  const handleOpenPartDetails = (index: number) => {
+    setEditingLineItem(service.parts[index])
+    setEditingLineItemIndex(index)
+    setIsPartDetailsOpen(true)
+  }
+
+  const handleSavePartDetails = (updatedItem: LineItem) => {
+    if (editingLineItemIndex !== null) {
+      const updatedParts = [...service.parts]
+      updatedParts[editingLineItemIndex] = updatedItem
+      handleLineItemsUpdate("parts", updatedParts)
+    }
+    setIsPartDetailsOpen(false)
+    setEditingLineItem(null)
+    setEditingLineItemIndex(null)
   }
 
   return (
@@ -469,6 +509,7 @@ export function EditableServiceCard({
                 items={service[cat.key]}
                 onUpdateItems={(items) => handleLineItemsUpdate(cat.key, items)}
                 onFindPart={cat.key === "parts" ? handleOpenCatalog : undefined}
+                onClickPart={cat.key === "parts" ? handleOpenPartDetails : undefined}
               />
             ))}
           </div>
@@ -499,6 +540,18 @@ export function EditableServiceCard({
         isOpen={isCatalogOpen}
         onClose={() => setIsCatalogOpen(false)}
         onSelectPart={handleSelectPart}
+      />
+      
+      <PartDetailsModal
+        isOpen={isPartDetailsOpen}
+        onClose={() => {
+          setIsPartDetailsOpen(false)
+          setEditingLineItem(null)
+          setEditingLineItemIndex(null)
+        }}
+        lineItem={editingLineItem}
+        onSave={handleSavePartDetails}
+        roNumber="Draft"
       />
     </Card>
   )
