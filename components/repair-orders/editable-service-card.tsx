@@ -178,7 +178,7 @@ interface LineItemSectionProps {
   color: string
   items: LineItem[]
   onUpdateItems: (items: LineItem[]) => void
-  onFindPart?: () => void
+  onFindPart?: (index: number) => void
 }
 
 function LineItemSection({ category, label, icon: Icon, color, items, onUpdateItems, onFindPart }: LineItemSectionProps) {
@@ -259,7 +259,7 @@ function LineItemSection({ category, label, icon: Icon, color, items, onUpdateIt
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
               isDragging={dragIndex === index}
-              onFindPart={onFindPart}
+              onFindPart={onFindPart ? () => onFindPart(index) : undefined}
             />
           ))}
         </div>
@@ -278,6 +278,7 @@ export function EditableServiceCard({
 }: EditableServiceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
+  const [catalogLineItemIndex, setCatalogLineItemIndex] = useState<number | undefined>(undefined)
 
   const calculateTotal = (svc: ServiceData) => {
     const partsTotal = svc.parts.reduce((sum, item) => sum + item.total, 0)
@@ -311,9 +312,24 @@ export function EditableServiceCard({
     newLineItem.unitPrice = part.price
     newLineItem.quantity = 1
     newLineItem.total = part.price
-    const updatedParts = [...service.parts, newLineItem]
+    
+    // If catalogLineItemIndex is set, replace that line item, otherwise add new
+    let updatedParts
+    if (catalogLineItemIndex !== undefined) {
+      updatedParts = [...service.parts]
+      updatedParts[catalogLineItemIndex] = newLineItem
+    } else {
+      updatedParts = [...service.parts, newLineItem]
+    }
+    
     handleLineItemsUpdate("parts", updatedParts)
     setIsCatalogOpen(false)
+    setCatalogLineItemIndex(undefined)
+  }
+
+  const handleOpenCatalog = (index?: number) => {
+    setCatalogLineItemIndex(index)
+    setIsCatalogOpen(true)
   }
 
   return (
@@ -452,7 +468,7 @@ export function EditableServiceCard({
                 color={cat.color}
                 items={service[cat.key]}
                 onUpdateItems={(items) => handleLineItemsUpdate(cat.key, items)}
-                onFindPart={cat.key === "parts" ? () => setIsCatalogOpen(true) : undefined}
+                onFindPart={cat.key === "parts" ? handleOpenCatalog : undefined}
               />
             ))}
           </div>

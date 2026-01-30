@@ -1,13 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, X } from "lucide-react"
-import type { LineItem } from "./ro-creation-wizard"
+import { Search, Loader2 } from "lucide-react"
+
+interface InventoryPart {
+  id: number
+  part_number: string
+  description: string
+  vendor: string
+  cost: number
+  price: number
+  quantity_available: number
+  location: string
+  category: string
+}
 
 interface Part {
   id: string
@@ -18,114 +29,78 @@ interface Part {
   quantity: number
   category: string
   manufacturer: string
+  location?: string
 }
 
 interface PartsCatalogModalProps {
   isOpen: boolean
   onClose: () => void
   onSelectPart: (part: Part) => void
+  lineItemIndex?: number // Optional: if provided, will replace that line item
 }
 
-// Mock API data - replace with actual API call
-const mockCatalogParts: Part[] = [
-  {
-    id: "1",
-    name: "Oil Filter",
-    partNumber: "OIL-001",
-    description: "Engine oil filter",
-    price: 12.99,
-    quantity: 10,
-    category: "Filters",
-    manufacturer: "Mobil",
-  },
-  {
-    id: "2",
-    name: "Air Filter",
-    partNumber: "AIR-001",
-    description: "Engine air filter",
-    price: 8.99,
-    quantity: 15,
-    category: "Filters",
-    manufacturer: "K&N",
-  },
-  {
-    id: "3",
-    name: "Brake Pads Set",
-    partNumber: "BRAKE-001",
-    description: "Semi-metallic brake pads",
-    price: 45.99,
-    quantity: 8,
-    category: "Brakes",
-    manufacturer: "Brembo",
-  },
-  {
-    id: "4",
-    name: "Spark Plugs (4 pack)",
-    partNumber: "SPARK-001",
-    description: "Premium spark plugs",
-    price: 24.99,
-    quantity: 12,
-    category: "Ignition",
-    manufacturer: "Bosch",
-  },
-  {
-    id: "5",
-    name: "Windshield Wipers",
-    partNumber: "WIPER-001",
-    description: "Premium wiper blades pair",
-    price: 18.99,
-    quantity: 20,
-    category: "Wipers",
-    manufacturer: "Rain-X",
-  },
-  {
-    id: "6",
-    name: "Battery",
-    partNumber: "BATT-001",
-    description: "12V automotive battery",
-    price: 89.99,
-    quantity: 5,
-    category: "Electrical",
-    manufacturer: "Optima",
-  },
-  {
-    id: "7",
-    name: "Transmission Fluid",
-    partNumber: "FLUID-001",
-    description: "Synthetic transmission fluid",
-    price: 15.99,
-    quantity: 25,
-    category: "Fluids",
-    manufacturer: "Valvoline",
-  },
-  {
-    id: "8",
-    name: "Coolant",
-    partNumber: "COOL-001",
-    description: "Antifreeze coolant",
-    price: 12.49,
-    quantity: 30,
-    category: "Fluids",
-    manufacturer: "Prestone",
-  },
-]
-
-export function PartsCatalogModal({ isOpen, onClose, onSelectPart }: PartsCatalogModalProps) {
+export function PartsCatalogModal({ isOpen, onClose, onSelectPart, lineItemIndex }: PartsCatalogModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [parts, setParts] = useState<Part[]>([])
+  const [loading, setLoading] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
 
-  const categories = Array.from(new Set(mockCatalogParts.map((p) => p.category)))
+  // Fetch parts from inventory API
+  useEffect(() => {
+    if (isOpen) {
+      loadParts()
+    }
+  }, [isOpen, searchQuery, selectedCategory])
 
-  const filteredParts = mockCatalogParts.filter((part) => {
-    const matchesSearch =
-      part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      part.partNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      part.description.toLowerCase().includes(searchQuery.toLowerCase())
+  async function loadParts() {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        search: searchQuery,
+        sortBy: 'part_number',
+        sortOrder: 'asc',
+        limit: searchQuery ? '20' : '5' // Show 5 by default, 20 when searching
+      })
 
-    const matchesCategory = !selectedCategory || part.category === selectedCategory
+      if (selectedCategory) {
+        // Add category filter if selected - not implemented in API yet, will filter client-side
+      }
 
-    return matchesSearch && matchesCategory
-  })
+      const response = await fetch(`/api/inventory/parts?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        const inventoryParts: InventoryPart[] = data.parts || []
+        
+        // Convert inventory parts to Part format
+        const convertedParts: Part[] = inventoryParts.map(p => ({
+          id: p.id.toString(),
+          name: p.description,
+          partNumber: p.part_number,
+          description: p.description,
+          price: p.price,
+          quantity: p.quantity_available,
+          category: p.category || 'General',
+          manufacturer: p.vendor,
+          location: p.location
+        }))
+        
+        setParts(convertedParts)
+        
+        // Extract unique categories
+        const uniqueCategories = Array.from(new Set(convertedParts.map(p => p.category).filter(Boolean)))
+        setCategories(uniqueCategories)
+      }
+    } catch (error) {
+      console.error('Failed to load parts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredParts = selectedCategory 
+    ? parts.filter(part => part.category === selectedCategory)
+    : parts
 
   const handleSelectPart = (part: Part) => {
     onSelectPart(part)
@@ -179,7 +154,11 @@ export function PartsCatalogModal({ isOpen, onClose, onSelectPart }: PartsCatalo
           {/* Parts List */}
           <ScrollArea className="flex-1 border border-border rounded-lg">
             <div className="space-y-2 p-4">
-              {filteredParts.length > 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredParts.length > 0 ? (
                 filteredParts.map((part) => (
                   <Card
                     key={part.id}
