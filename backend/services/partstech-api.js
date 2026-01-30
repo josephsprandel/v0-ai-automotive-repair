@@ -572,12 +572,12 @@ function groupPartsByVendor(parts) {
   const vendorNames = {
     '1': 'PartsTech Catalog',
     '70468': 'O\'Reilly Auto Parts',
-    '139607': 'Vendor 2',
-    '56978': 'Vendor 3',
-    '57020': 'Vendor 4',
-    '150404': 'Vendor 5',
-    '243873': 'Vendor 6',
-    '248963': 'Vendor 7'
+    '139607': 'SSF Auto Parts',
+    '56978': 'AutoZone',
+    '57020': 'Crow-Burlingame',
+    '150404': 'NAPA Auto Parts',
+    '243873': 'Tri-State Enterprises',
+    '248963': 'WorldPac'
   };
 
   parts.forEach(part => {
