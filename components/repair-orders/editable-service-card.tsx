@@ -100,15 +100,23 @@ function DraggableLineItem({
 
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
       onDragOver={(e) => onDragOver(e, index)}
-      onDragEnd={onDragEnd}
       className={`flex items-center gap-2 p-2 rounded-lg border border-border bg-card transition-all ${
         isDragging ? "opacity-50 scale-95" : ""
       }`}
     >
-      <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+      <div 
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation()
+          onDragStart(e, index)
+        }}
+        onDragEnd={(e) => {
+          e.stopPropagation()
+          onDragEnd()
+        }}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+      >
         <GripVertical size={14} />
       </div>
       <div className={`${categoryColor} flex-shrink-0`}>
