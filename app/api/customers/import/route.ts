@@ -172,12 +172,18 @@ export async function POST(request: NextRequest) {
                           (record as any).ID || 
                           '';
         
+        // Truncate values to fit database column limits
+        const truncate = (str: string, maxLen: number) => str ? str.substring(0, maxLen) : str;
+        
         // Check if customer already exists (by name and phone)
         const checkResult = await client.query(`
           SELECT id FROM customers 
           WHERE customer_name = $1 AND phone_primary = $2
           LIMIT 1
-        `, [customerName.trim(), phonePrimary.trim() || null]);
+        `, [
+          truncate(customerName.trim(), 255), 
+          truncate(phonePrimary.trim() || '', 20) || null
+        ]);
         
         if (checkResult.rows.length > 0) {
           // Customer exists - UPDATE
@@ -195,15 +201,15 @@ export async function POST(request: NextRequest) {
               updated_at = NOW()
             WHERE id = $10
           `, [
-            phoneSecondary.trim() || null,
-            phoneMobile.trim() || null,
-            email ? email.trim() : null,
-            address.trim() || null,
-            city.trim() || null,
-            state.trim() || null,
-            zipCode.trim() || null,
-            customerType.toLowerCase(),
-            notes.trim() || null,
+            truncate(phoneSecondary.trim() || '', 20) || null,
+            truncate(phoneMobile.trim() || '', 20) || null,
+            truncate(email ? email.trim() : '', 255) || null,
+            truncate(address.trim() || '', 255) || null,
+            truncate(city.trim() || '', 100) || null,
+            truncate(state.trim() || '', 50) || null,
+            truncate(zipCode.trim() || '', 10) || null,
+            truncate(customerType.toLowerCase(), 50),
+            truncate(notes.trim() || '', 1000) || null,
             checkResult.rows[0].id
           ]);
           updated++;
@@ -226,17 +232,17 @@ export async function POST(request: NextRequest) {
               updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
           `, [
-            customerName.trim(),
-            phonePrimary.trim() || null,
-            phoneSecondary.trim() || null,
-            phoneMobile.trim() || null,
-            email ? email.trim() : null,
-            address.trim() || null,
-            city.trim() || null,
-            state.trim() || null,
-            zipCode.trim() || null,
-            customerType.toLowerCase(),
-            notes.trim() || null
+            truncate(customerName.trim(), 255),
+            truncate(phonePrimary.trim() || '', 20) || null,
+            truncate(phoneSecondary.trim() || '', 20) || null,
+            truncate(phoneMobile.trim() || '', 20) || null,
+            truncate(email ? email.trim() : '', 255) || null,
+            truncate(address.trim() || '', 255) || null,
+            truncate(city.trim() || '', 100) || null,
+            truncate(state.trim() || '', 50) || null,
+            truncate(zipCode.trim() || '', 10) || null,
+            truncate(customerType.toLowerCase(), 50),
+            truncate(notes.trim() || '', 1000) || null
           ]);
           imported++;
         }
