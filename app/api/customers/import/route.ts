@@ -181,34 +181,31 @@ export async function POST(request: NextRequest) {
             phone_secondary,
             phone_mobile,
             email,
-            address,
+            address_line1,
             city,
             state,
-            zip_code,
+            zip,
             customer_type,
-            company_name,
-            tax_id,
             notes,
             shopware_id,
             last_synced_at,
-            created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+            created_at,
+            updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW(), NOW())
           ON CONFLICT (customer_name, phone_primary) 
           DO UPDATE SET
             phone_secondary = EXCLUDED.phone_secondary,
             phone_mobile = EXCLUDED.phone_mobile,
             email = EXCLUDED.email,
-            address = EXCLUDED.address,
+            address_line1 = EXCLUDED.address_line1,
             city = EXCLUDED.city,
             state = EXCLUDED.state,
-            zip_code = EXCLUDED.zip_code,
+            zip = EXCLUDED.zip,
             customer_type = EXCLUDED.customer_type,
-            company_name = EXCLUDED.company_name,
-            tax_id = EXCLUDED.tax_id,
             notes = EXCLUDED.notes,
             shopware_id = EXCLUDED.shopware_id,
             last_synced_at = NOW(),
-            last_updated = NOW()
+            updated_at = NOW()
           RETURNING (xmax = 0) AS inserted
         `, [
           customerName.trim(),
@@ -221,8 +218,6 @@ export async function POST(request: NextRequest) {
           state.trim() || null,
           zipCode.trim() || null,
           customerType.toLowerCase(),
-          companyName ? companyName.trim() : null,
-          taxId ? taxId.trim() : null,
           notes.trim() || null,
           shopwareId.trim() || null
         ]);
