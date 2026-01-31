@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Search, Phone, Mail, MapPin, Plus, Loader2 } from "lucide-react"
+import { Search, Phone, Mail, MapPin, Plus, Loader2, Upload } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { CustomerCreateDialog } from "./customer-create-dialog"
 
@@ -112,6 +112,14 @@ export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: s
             className="pl-10 bg-card border-border"
           />
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => router.push('/customers/import')} 
+          className="gap-2 bg-transparent"
+        >
+          <Upload size={18} />
+          Import
+        </Button>
         <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
           <Plus size={18} />
           New Customer
