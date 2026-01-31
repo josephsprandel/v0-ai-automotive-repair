@@ -172,56 +172,73 @@ export async function POST(request: NextRequest) {
                           (record as any).ID || 
                           '';
         
-        // UPSERT: Insert new or update existing based on name + phone combination
-        // We use (customer_name, phone_primary) as the unique identifier since ShopWare doesn't have a persistent ID we can rely on
-        const result = await client.query(`
-          INSERT INTO customers (
-            customer_name,
-            phone_primary,
-            phone_secondary,
-            phone_mobile,
-            email,
-            address_line1,
-            city,
-            state,
-            zip,
-            customer_type,
-            notes,
-            created_at,
-            updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-          ON CONFLICT (customer_name, phone_primary) 
-          DO UPDATE SET
-            phone_secondary = EXCLUDED.phone_secondary,
-            phone_mobile = EXCLUDED.phone_mobile,
-            email = EXCLUDED.email,
-            address_line1 = EXCLUDED.address_line1,
-            city = EXCLUDED.city,
-            state = EXCLUDED.state,
-            zip = EXCLUDED.zip,
-            customer_type = EXCLUDED.customer_type,
-            notes = EXCLUDED.notes,
-            updated_at = NOW()
-          RETURNING (xmax = 0) AS inserted
-        `, [
-          customerName.trim(),
-          phonePrimary.trim() || null,
-          phoneSecondary.trim() || null,
-          phoneMobile.trim() || null,
-          email ? email.trim() : null,
-          address.trim() || null,
-          city.trim() || null,
-          state.trim() || null,
-          zipCode.trim() || null,
-          customerType.toLowerCase(),
-          notes.trim() || null
-        ]);
+        // Check if customer already exists (by name and phone)
+        const checkResult = await client.query(`
+          SELECT id FROM customers 
+          WHERE customer_name = $1 AND phone_primary = $2
+          LIMIT 1
+        `, [customerName.trim(), phonePrimary.trim() || null]);
         
-        // Check if it was an insert or update
-        if (result.rows[0].inserted) {
-          imported++;
-        } else {
+        if (checkResult.rows.length > 0) {
+          // Customer exists - UPDATE
+          await client.query(`
+            UPDATE customers SET
+              phone_secondary = $1,
+              phone_mobile = $2,
+              email = $3,
+              address_line1 = $4,
+              city = $5,
+              state = $6,
+              zip = $7,
+              customer_type = $8,
+              notes = $9,
+              updated_at = NOW()
+            WHERE id = $10
+          `, [
+            phoneSecondary.trim() || null,
+            phoneMobile.trim() || null,
+            email ? email.trim() : null,
+            address.trim() || null,
+            city.trim() || null,
+            state.trim() || null,
+            zipCode.trim() || null,
+            customerType.toLowerCase(),
+            notes.trim() || null,
+            checkResult.rows[0].id
+          ]);
           updated++;
+        } else {
+          // Customer doesn't exist - INSERT
+          await client.query(`
+            INSERT INTO customers (
+              customer_name,
+              phone_primary,
+              phone_secondary,
+              phone_mobile,
+              email,
+              address_line1,
+              city,
+              state,
+              zip,
+              customer_type,
+              notes,
+              created_at,
+              updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+          `, [
+            customerName.trim(),
+            phonePrimary.trim() || null,
+            phoneSecondary.trim() || null,
+            phoneMobile.trim() || null,
+            email ? email.trim() : null,
+            address.trim() || null,
+            city.trim() || null,
+            state.trim() || null,
+            zipCode.trim() || null,
+            customerType.toLowerCase(),
+            notes.trim() || null
+          ]);
+          imported++;
         }
         
       } catch (err: any) {
