@@ -113,6 +113,12 @@ export async function POST(request: NextRequest) {
                             (record as any).phone_primary || 
                             '';
         
+        // Skip customers without phone number (phone_primary is required)
+        if (!phonePrimary || phonePrimary.trim().length === 0) {
+          skipped++;
+          continue;
+        }
+        
         // Parse "Other phones" field (may contain multiple phones separated by commas)
         const otherPhones = (record as any)['Other phones'] || '';
         const phoneNumbers = otherPhones.split(',').map((p: string) => p.trim()).filter((p: string) => p);
