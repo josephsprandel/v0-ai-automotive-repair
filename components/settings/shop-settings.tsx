@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,18 +8,246 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Building2, Clock, MapPin, Phone, Mail, Globe, Save } from "lucide-react"
+import { Building2, Clock, MapPin, Phone, Mail, Globe, Save, Loader2, AlertCircle, Plus, X } from "lucide-react"
+
+// All 50 US States
+const US_STATES = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" },
+  { code: "DC", name: "District of Columbia" },
+]
+
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+const OPEN_TIMES = ["06:00", "07:00", "08:00", "09:00", "10:00"]
+const CLOSE_TIMES = ["14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"]
+
+interface ShopProfile {
+  id?: number
+  shop_name: string
+  dba_name: string
+  address_line1: string
+  address_line2: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+  website: string
+  services_description: string
+  tags: string[]
+  parts_markup_percent: number
+}
+
+interface OperatingHours {
+  id?: number
+  day_of_week: string
+  is_open: boolean
+  open_time: string | null
+  close_time: string | null
+}
+
+const initialProfile: ShopProfile = {
+  shop_name: "",
+  dba_name: "",
+  address_line1: "",
+  address_line2: "",
+  city: "",
+  state: "",
+  zip: "",
+  phone: "",
+  email: "",
+  website: "",
+  services_description: "",
+  tags: [],
+  parts_markup_percent: 35,
+}
 
 export function ShopSettings() {
+  const [profile, setProfile] = useState<ShopProfile>(initialProfile)
+  const [operatingHours, setOperatingHours] = useState<OperatingHours[]>([])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [newTag, setNewTag] = useState("")
 
-  const handleSave = () => {
-    setSaving(true)
-    setTimeout(() => setSaving(false), 1000)
+  useEffect(() => {
+    fetchShopProfile()
+  }, [])
+
+  async function fetchShopProfile() {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch("/api/settings/shop-profile")
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch shop profile")
+      }
+
+      if (data.profile) {
+        setProfile({
+          ...data.profile,
+          tags: data.profile.tags || [],
+          parts_markup_percent: parseFloat(data.profile.parts_markup_percent) || 35,
+        })
+      }
+
+      if (data.operatingHours && data.operatingHours.length > 0) {
+        setOperatingHours(data.operatingHours.map((h: any) => ({
+          ...h,
+          open_time: h.open_time?.slice(0, 5) || "07:00",
+          close_time: h.close_time?.slice(0, 5) || "18:00",
+        })))
+      } else {
+        // Initialize with defaults
+        setOperatingHours(DAYS_OF_WEEK.map(day => ({
+          day_of_week: day,
+          is_open: day !== "Sunday",
+          open_time: day === "Saturday" ? "08:00" : "07:00",
+          close_time: day === "Saturday" ? "14:00" : "18:00",
+        })))
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleSave() {
+    try {
+      setSaving(true)
+      setError(null)
+
+      const response = await fetch("/api/settings/shop-profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile, operatingHours }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save shop profile")
+      }
+
+      // Show success (you could add a toast here)
+      alert("Shop profile saved successfully!")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function updateHours(day: string, field: keyof OperatingHours, value: any) {
+    setOperatingHours(hours =>
+      hours.map(h =>
+        h.day_of_week === day ? { ...h, [field]: value } : h
+      )
+    )
+  }
+
+  function addTag() {
+    if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
+      setProfile({ ...profile, tags: [...profile.tags, newTag.trim()] })
+      setNewTag("")
+    }
+  }
+
+  function removeTag(tag: string) {
+    setProfile({ ...profile, tags: profile.tags.filter(t => t !== tag) })
+  }
+
+  function formatTimeDisplay(time: string): string {
+    const hour = parseInt(time.split(":")[0])
+    if (hour === 0) return "12:00 AM"
+    if (hour < 12) return `${hour}:00 AM`
+    if (hour === 12) return "12:00 PM"
+    return `${hour - 12}:00 PM`
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error && !profile.shop_name) {
+    return (
+      <Card className="p-6 border-border">
+        <div className="flex items-center gap-3 text-destructive">
+          <AlertCircle size={20} />
+          <p>{error}</p>
+        </div>
+        <Button onClick={fetchShopProfile} className="mt-4">
+          Retry
+        </Button>
+      </Card>
+    )
   }
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-center gap-2">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
       {/* Shop Information */}
       <Card className="p-6 border-border">
         <div className="flex items-center gap-3 mb-6">
@@ -29,62 +257,120 @@ export function ShopSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="shop-name">Shop Name</Label>
-            <Input id="shop-name" defaultValue="Downtown Auto Repair" />
+            <Input
+              id="shop-name"
+              value={profile.shop_name}
+              onChange={(e) => setProfile({ ...profile, shop_name: e.target.value })}
+              placeholder="Your shop name"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="dba">DBA / Trade Name</Label>
-            <Input id="dba" placeholder="If different from shop name" />
+            <Input
+              id="dba"
+              value={profile.dba_name}
+              onChange={(e) => setProfile({ ...profile, dba_name: e.target.value })}
+              placeholder="If different from shop name"
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="address">Street Address</Label>
             <div className="flex gap-2">
               <MapPin size={18} className="text-muted-foreground mt-2.5" />
-              <Input id="address" defaultValue="1234 Main Street, Suite 100" className="flex-1" />
+              <Input
+                id="address"
+                value={profile.address_line1}
+                onChange={(e) => setProfile({ ...profile, address_line1: e.target.value })}
+                className="flex-1"
+                placeholder="Street address"
+              />
             </div>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="address2">Address Line 2</Label>
+            <Input
+              id="address2"
+              value={profile.address_line2}
+              onChange={(e) => setProfile({ ...profile, address_line2: e.target.value })}
+              placeholder="Suite, unit, building, etc."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Input id="city" defaultValue="Los Angeles" />
+            <Input
+              id="city"
+              value={profile.city}
+              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              placeholder="City"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="state">State</Label>
-              <Select defaultValue="CA">
+              <Select
+                value={profile.state}
+                onValueChange={(value) => setProfile({ ...profile, state: value })}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select state" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CA">California</SelectItem>
-                  <SelectItem value="TX">Texas</SelectItem>
-                  <SelectItem value="FL">Florida</SelectItem>
-                  <SelectItem value="NY">New York</SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  {US_STATES.map((state) => (
+                    <SelectItem key={state.code} value={state.code}>
+                      {state.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="zip">ZIP Code</Label>
-              <Input id="zip" defaultValue="90012" />
+              <Input
+                id="zip"
+                value={profile.zip}
+                onChange={(e) => setProfile({ ...profile, zip: e.target.value })}
+                placeholder="ZIP code"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
             <div className="flex gap-2">
               <Phone size={18} className="text-muted-foreground mt-2.5" />
-              <Input id="phone" defaultValue="(213) 555-0123" className="flex-1" />
+              <Input
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                className="flex-1"
+                placeholder="(555) 555-5555"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <div className="flex gap-2">
               <Mail size={18} className="text-muted-foreground mt-2.5" />
-              <Input id="email" type="email" defaultValue="service@downtownauto.com" className="flex-1" />
+              <Input
+                id="email"
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                className="flex-1"
+                placeholder="email@example.com"
+              />
             </div>
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="website">Website</Label>
             <div className="flex gap-2">
               <Globe size={18} className="text-muted-foreground mt-2.5" />
-              <Input id="website" defaultValue="https://downtownautorepair.com" className="flex-1" />
+              <Input
+                id="website"
+                value={profile.website}
+                onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                className="flex-1"
+                placeholder="https://yourshop.com"
+              />
             </div>
           </div>
         </div>
@@ -97,31 +383,42 @@ export function ShopSettings() {
           <h3 className="text-lg font-semibold text-foreground">Operating Hours</h3>
         </div>
         <div className="space-y-4">
-          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-            <div key={day} className="flex items-center gap-4">
-              <span className="w-28 text-sm font-medium text-foreground">{day}</span>
-              <Switch defaultChecked={day !== "Sunday"} />
-              <Select defaultValue={day === "Saturday" ? "8:00" : "7:00"}>
+          {operatingHours.map((hours) => (
+            <div key={hours.day_of_week} className="flex items-center gap-4">
+              <span className="w-28 text-sm font-medium text-foreground">{hours.day_of_week}</span>
+              <Switch
+                checked={hours.is_open}
+                onCheckedChange={(checked) => updateHours(hours.day_of_week, "is_open", checked)}
+              />
+              <Select
+                value={hours.open_time || "07:00"}
+                onValueChange={(value) => updateHours(hours.day_of_week, "open_time", value)}
+                disabled={!hours.is_open}
+              >
                 <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {["6:00", "7:00", "8:00", "9:00"].map((time) => (
+                  {OPEN_TIMES.map((time) => (
                     <SelectItem key={time} value={time}>
-                      {time} AM
+                      {formatTimeDisplay(time)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <span className="text-muted-foreground">to</span>
-              <Select defaultValue={day === "Saturday" ? "14:00" : "18:00"}>
+              <Select
+                value={hours.close_time || "18:00"}
+                onValueChange={(value) => updateHours(hours.day_of_week, "close_time", value)}
+                disabled={!hours.is_open}
+              >
                 <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {["14:00", "16:00", "17:00", "18:00", "19:00", "20:00"].map((time) => (
+                  {CLOSE_TIMES.map((time) => (
                     <SelectItem key={time} value={time}>
-                      {parseInt(time) > 12 ? `${parseInt(time) - 12}:00 PM` : `${time} PM`}
+                      {formatTimeDisplay(time)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -131,30 +428,76 @@ export function ShopSettings() {
         </div>
       </Card>
 
+      {/* Parts Markup */}
+      <Card className="p-6 border-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-foreground">Parts Markup</p>
+            <p className="text-sm text-muted-foreground">Default markup applied to parts cost</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={profile.parts_markup_percent}
+              onChange={(e) => setProfile({ ...profile, parts_markup_percent: parseFloat(e.target.value) || 0 })}
+              className="w-20 text-right"
+              type="number"
+              min="0"
+              max="100"
+            />
+            <span className="text-muted-foreground">%</span>
+          </div>
+        </div>
+      </Card>
+
       {/* Services Offered */}
       <Card className="p-6 border-border">
         <h3 className="text-lg font-semibold text-foreground mb-4">Services & Specialties</h3>
         <Textarea
           placeholder="Describe your shop's services and specialties..."
-          defaultValue="Full-service auto repair specializing in domestic and Asian vehicles. ASE-certified technicians. Services include engine diagnostics, brake repair, transmission service, AC repair, electrical systems, and routine maintenance. Factory-scheduled maintenance for all makes and models."
+          value={profile.services_description}
+          onChange={(e) => setProfile({ ...profile, services_description: e.target.value })}
           rows={4}
         />
-        <div className="mt-4 flex flex-wrap gap-2">
-          {["ASE Certified", "AAA Approved", "Domestic", "Asian", "European", "Hybrid/EV", "Diesel"].map((tag) => (
-            <Button key={tag} variant="outline" size="sm" className="h-7 bg-transparent">
-              {tag}
+        <div className="mt-4">
+          <Label className="mb-2 block">Specialty Tags</Label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {profile.tags.map((tag) => (
+              <Button
+                key={tag}
+                variant="outline"
+                size="sm"
+                className="h-7 bg-transparent"
+                onClick={() => removeTag(tag)}
+              >
+                {tag}
+                <X size={14} className="ml-1" />
+              </Button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="Add a tag..."
+              className="flex-1"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+            />
+            <Button variant="outline" size="sm" onClick={addTag}>
+              <Plus size={16} className="mr-1" />
+              Add Tag
             </Button>
-          ))}
-          <Button variant="ghost" size="sm" className="h-7 text-accent">
-            + Add Tag
-          </Button>
+          </div>
         </div>
       </Card>
 
       {/* Save Button */}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
-          <Save size={16} className="mr-2" />
+          {saving ? (
+            <Loader2 size={16} className="mr-2 animate-spin" />
+          ) : (
+            <Save size={16} className="mr-2" />
+          )}
           {saving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
