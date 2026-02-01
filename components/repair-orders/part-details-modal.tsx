@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Loader2 } from "lucide-react"
 import type { LineItem } from "./ro-creation-wizard"
 
 interface PartDetailsModalProps {
@@ -13,6 +14,188 @@ interface PartDetailsModalProps {
   lineItem: LineItem | null
   onSave: (updatedItem: LineItem) => void
   roNumber?: string
+}
+
+interface AutocompleteSuggestion {
+  value: string
+  label: string
+  part_number?: string
+  description?: string
+  vendor?: string
+  cost?: number
+  price?: number
+  quantity_available?: number
+  field?: string
+}
+
+// Reusable Autocomplete Input Component
+function AutocompleteInput({
+  value,
+  onChange,
+  onSelect,
+  placeholder,
+  field,
+  className,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSelect: (suggestion: AutocompleteSuggestion) => void
+  placeholder?: string
+  field: 'vendor' | 'description' | 'part_number'
+  className?: string
+}) {
+  const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([])
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(
+        `/api/inventory/parts/autocomplete?q=${encodeURIComponent(query)}&field=${field}&limit=8`
+      )
+      const data = await response.json()
+      setSuggestions(data.suggestions || [])
+      setShowSuggestions(true)
+      setSelectedIndex(-1)
+    } catch (error) {
+      console.error('Autocomplete error:', error)
+      setSuggestions([])
+    } finally {
+      setLoading(false)
+    }
+  }, [field])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    onChange(newValue)
+
+    // Debounce the API call
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(newValue)
+    }, 200)
+  }
+
+  const handleSelect = (suggestion: AutocompleteSuggestion) => {
+    onChange(suggestion.value)
+    onSelect(suggestion)
+    setShowSuggestions(false)
+    setSuggestions([])
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setSelectedIndex((prev) => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1))
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+          handleSelect(suggestions[selectedIndex])
+        }
+        break
+      case 'Escape':
+        setShowSuggestions(false)
+        break
+    }
+  }
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          placeholder={placeholder}
+          className={className}
+        />
+        {loading && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
+
+      {showSuggestions && suggestions.length > 0 && (
+        <div
+          ref={suggestionsRef}
+          className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={`${suggestion.value}-${index}`}
+              type="button"
+              onClick={() => handleSelect(suggestion)}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${
+                index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
+              }`}
+            >
+              <div className="font-medium">{suggestion.value}</div>
+              {(suggestion.part_number || suggestion.vendor || suggestion.description) && (
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {field === 'vendor' && suggestion.part_number && (
+                    <span>{suggestion.part_number}</span>
+                  )}
+                  {field === 'description' && suggestion.part_number && (
+                    <span>#{suggestion.part_number}</span>
+                  )}
+                  {field === 'description' && suggestion.vendor && (
+                    <span> • {suggestion.vendor}</span>
+                  )}
+                  {field === 'part_number' && suggestion.description && (
+                    <span>{suggestion.description}</span>
+                  )}
+                  {suggestion.quantity_available !== undefined && (
+                    <span className={`ml-2 ${suggestion.quantity_available > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      ({suggestion.quantity_available} in stock)
+                    </span>
+                  )}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function PartDetailsModal({ isOpen, onClose, lineItem, onSave, roNumber }: PartDetailsModalProps) {
@@ -82,6 +265,46 @@ export function PartDetailsModal({ isOpen, onClose, lineItem, onSave, roNumber }
     }
   }
 
+  // Handle autocomplete selection - auto-fill related fields
+  const handleVendorSelect = (suggestion: AutocompleteSuggestion) => {
+    setVendor(suggestion.value)
+    // Optionally fill other fields if available
+    if (suggestion.part_number && !partNumber) {
+      setPartNumber(suggestion.part_number)
+    }
+    if (suggestion.description && !description) {
+      setDescription(suggestion.description)
+    }
+  }
+
+  const handleDescriptionSelect = (suggestion: AutocompleteSuggestion) => {
+    setDescription(suggestion.value)
+    // Auto-fill related fields
+    if (suggestion.part_number) {
+      setPartNumber(suggestion.part_number)
+    }
+    if (suggestion.vendor) {
+      setVendor(suggestion.vendor)
+    }
+    if (suggestion.cost !== undefined) {
+      handleCostChange(suggestion.cost)
+    }
+  }
+
+  const handlePartNumberSelect = (suggestion: AutocompleteSuggestion) => {
+    setPartNumber(suggestion.value)
+    // Auto-fill related fields
+    if (suggestion.description) {
+      setDescription(suggestion.description)
+    }
+    if (suggestion.vendor) {
+      setVendor(suggestion.vendor)
+    }
+    if (suggestion.cost !== undefined) {
+      handleCostChange(suggestion.cost)
+    }
+  }
+
   const handleSave = () => {
     if (!lineItem) return
 
@@ -125,7 +348,7 @@ export function PartDetailsModal({ isOpen, onClose, lineItem, onSave, roNumber }
           )}
 
           <div className="text-sm text-muted-foreground">
-            Edit the part information for this repair order only:
+            Edit the part information for this repair order only. Start typing to search inventory:
           </div>
 
           {/* Part Type */}
@@ -138,35 +361,41 @@ export function PartDetailsModal({ isOpen, onClose, lineItem, onSave, roNumber }
             />
           </div>
 
-          {/* Brand/Vendor */}
+          {/* Brand/Vendor - with autocomplete */}
           <div className="space-y-2">
             <Label>Brand</Label>
-            <Input
+            <AutocompleteInput
               value={vendor}
-              onChange={(e) => setVendor(e.target.value)}
+              onChange={setVendor}
+              onSelect={handleVendorSelect}
               placeholder="e.g., Iwis, Bosch, etc."
+              field="vendor"
               className="bg-card"
             />
           </div>
 
-          {/* Description */}
+          {/* Description - with autocomplete */}
           <div className="space-y-2">
             <Label>Description</Label>
-            <Input
+            <AutocompleteInput
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
+              onSelect={handleDescriptionSelect}
               placeholder="Part description"
+              field="description"
               className="bg-card"
             />
           </div>
 
-          {/* Part Number */}
+          {/* Part Number - with autocomplete */}
           <div className="space-y-2">
             <Label>Part Number</Label>
-            <Input
+            <AutocompleteInput
               value={partNumber}
-              onChange={(e) => setPartNumber(e.target.value)}
+              onChange={setPartNumber}
+              onSelect={handlePartNumberSelect}
               placeholder="Enter part number"
+              field="part_number"
               className="bg-card"
             />
           </div>
