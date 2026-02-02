@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         c.customer_name, c.phone_primary, c.email
       FROM vehicles v
       LEFT JOIN customers c ON v.customer_id = c.id
-      WHERE v.is_active = true
+      WHERE v.is_active = true AND v.deleted_at IS NULL
     `
     const params: any[] = []
     let paramCount = 0
@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
       if (search) {
         countSql += ' LEFT JOIN customers c ON v.customer_id = c.id'
       }
-      countSql += ' WHERE v.is_active = true'
+      countSql += ' WHERE v.is_active = true AND v.deleted_at IS NULL'
+    } else {
+      countSql += ' WHERE v.is_active = true AND v.deleted_at IS NULL'
     }
 
     if (customerId) {

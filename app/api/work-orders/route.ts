@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN customers c ON wo.customer_id = c.id
       LEFT JOIN vehicles v ON wo.vehicle_id = v.id
       LEFT JOIN users u ON wo.created_by = u.id
-      WHERE wo.is_active = true
+      WHERE wo.is_active = true AND wo.deleted_at IS NULL
     `
     const params: any[] = []
     let paramCount = 0
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       FROM work_orders wo
       LEFT JOIN customers c ON wo.customer_id = c.id
       LEFT JOIN vehicles v ON wo.vehicle_id = v.id
-      WHERE wo.is_active = true
+      WHERE wo.is_active = true AND wo.deleted_at IS NULL
     `
     const countParams: any[] = []
     let countParamCount = 0

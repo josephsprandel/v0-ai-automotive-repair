@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         address_line1, address_line2, city, state, zip,
         customer_type, is_active, created_at, updated_at
       FROM customers
-      WHERE is_active = true
+      WHERE is_active = true AND deleted_at IS NULL
     `
     const params: any[] = []
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const result = await query(sql, params)
 
     // Get total count
-    let countSql = 'SELECT COUNT(*) as total FROM customers WHERE is_active = true'
+    let countSql = 'SELECT COUNT(*) as total FROM customers WHERE is_active = true AND deleted_at IS NULL'
     const countParams: any[] = []
     if (search) {
       countSql += ` AND (customer_name ILIKE $1 OR phone_primary ILIKE $1 OR email ILIKE $1)`
