@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Menu, X, Wrench, LayoutDashboard, Users, MessageSquare, Settings, Zap, BarChart3, Package } from "lucide-react"
+import { Menu, X, Wrench, LayoutDashboard, Users, MessageSquare, Settings, Zap, BarChart3, Package, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 
@@ -35,6 +35,7 @@ export function Sidebar() {
     { icon: MessageSquare, label: "Communications", href: "#" },
     { icon: BarChart3, label: "Analytics", href: "#" },
     { icon: Zap, label: "AI Assistant", href: "/ai-assistant", beta: true },
+    { icon: Trash2, label: "Recycle Bin", href: "/recycle-bin" },
     { icon: Settings, label: "Settings", href: "/settings" },
   ]
 
