@@ -15,7 +15,7 @@ export async function GET() {
       SELECT 
         u.id,
         u.email,
-        u.name,
+        u.full_name as name,
         u.is_active,
         u.created_at,
         u.last_login,
@@ -100,9 +100,9 @@ export async function POST(request: NextRequest) {
       
       // Create user
       const userResult = await client.query(`
-        INSERT INTO users (email, name, password_hash, is_active)
+        INSERT INTO users (email, full_name, password_hash, is_active)
         VALUES ($1, $2, $3, $4)
-        RETURNING id, email, name, is_active, created_at
+        RETURNING id, email, full_name as name, is_active, created_at
       `, [email.trim().toLowerCase(), name.trim(), passwordHash, isActive !== false])
       
       const userId = userResult.rows[0].id

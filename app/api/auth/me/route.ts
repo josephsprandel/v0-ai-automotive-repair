@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     
     // Get user info from database
     const userResult = await pool.query(`
-      SELECT id, email, name, is_active, last_login, created_at
+      SELECT id, email, full_name as name, is_active, last_login, created_at
       FROM users
       WHERE id = $1
     `, [decoded.userId])

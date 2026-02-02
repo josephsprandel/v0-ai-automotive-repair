@@ -21,7 +21,7 @@ export async function GET(
       SELECT 
         u.id,
         u.email,
-        u.name,
+        u.full_name as name,
         u.is_active,
         u.created_at,
         u.last_login,
@@ -107,7 +107,7 @@ export async function PATCH(
       let paramIndex = 1
       
       if (name !== undefined) {
-        updates.push(`name = $${paramIndex++}`)
+        updates.push(`full_name = $${paramIndex++}`)
         values.push(name.trim())
       }
       
@@ -187,7 +187,7 @@ export async function DELETE(
   try {
     // Check if user exists
     const userCheck = await pool.query(
-      `SELECT id, email, name FROM users WHERE id = $1`,
+      `SELECT id, email, full_name as name FROM users WHERE id = $1`,
       [id]
     )
     
