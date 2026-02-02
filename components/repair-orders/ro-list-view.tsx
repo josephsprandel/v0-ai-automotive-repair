@@ -159,8 +159,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
   }
 
   return (
-    <>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header with actions */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
@@ -342,8 +341,6 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
             />
           </div>
         )}
-      </div>
-
-    </>
+    </div>
   )
 }
