@@ -8,10 +8,8 @@ export default function RepairOrdersPage() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6">
-            <ROListView />
-          </div>
+        <main className="flex-1 overflow-y-auto p-6">
+          <ROListView />
         </main>
       </div>
     </div>

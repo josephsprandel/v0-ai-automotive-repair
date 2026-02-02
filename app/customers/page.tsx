@@ -14,14 +14,12 @@ export default function CustomersPage() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6">
-            {selectedCustomerId ? (
-              <CustomerProfile customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
-            ) : (
-              <CustomerSearch onSelectCustomer={setSelectedCustomerId} />
-            )}
-          </div>
+        <main className="flex-1 overflow-y-auto p-6">
+          {selectedCustomerId ? (
+            <CustomerProfile customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
+          ) : (
+            <CustomerSearch onSelectCustomer={setSelectedCustomerId} />
+          )}
         </main>
       </div>
     </div>
