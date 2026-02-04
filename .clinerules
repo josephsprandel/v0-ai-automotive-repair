@@ -1,0 +1,146 @@
+# Project-Specific Rules for RO Engine (Automotive Repair Management System)
+
+## IMPORTANT: Production Environment
+- **WE ARE TESTING EVERYTHING DIRECTLY IN PRODUCTION**
+- Production URL: https://arologik.com
+- Local development runs on localhost:3000
+- Always test changes after deployment
+
+## Database Information
+- Database: PostgreSQL
+- Connection: shopops/shopops_dev@localhost:5432/shopops3
+- Database config: lib/db.ts uses process.env.DATABASE_URL from .env.local
+
+## Database Migration Process
+When database schema changes are needed:
+
+1. Create migration file in `db/migrations/` with naming: `###_description.sql`
+2. Apply migration manually:
+   ```bash
+   psql -d shopops3 -U shopops -f db/migrations/XXX_migration_name.sql
+   ```
+3. Or if using a migration script:
+   ```bash
+   node scripts/run-migrations.js
+   ```
+
+## Deployment Process (CRITICAL - Always Follow These Steps)
+
+### After ANY code changes to the application:
+
+1. **Commit changes to Git:**
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push origin main
+   ```
+
+2. **Rebuild the Next.js production bundle:**
+   ```bash
+   cd /home/jsprandel/roengine
+   npm run build
+   ```
+   - This compiles TypeScript, bundles React components, and optimizes for production
+   - MUST be done after ANY changes to pages, components, or API routes
+
+3. **Restart the PM2 process:**
+   ```bash
+   pm2 restart ai-automotive-repair
+   ```
+   - Production app name: `ai-automotive-repair` (NOT roengine)
+   - Check status: `pm2 list` or `pm2 status ai-automotive-repair`
+   - View logs: `pm2 logs ai-automotive-repair`
+
+### Quick Deployment Commands (Copy-Paste):
+```bash
+# Full deployment in one go:
+cd /home/jsprandel/roengine && \
+git add . && \
+git commit -m "Your commit message" && \
+git push origin main && \
+npm run build && \
+pm2 restart ai-automotive-repair
+
+# Check if deployment was successful:
+pm2 status ai-automotive-repair
+pm2 logs ai-automotive-repair --lines 50
+```
+
+## API Endpoint Reference
+
+### Inventory APIs:
+- `GET /api/inventory/parts?search=query` - Returns `{ success, parts: [], pagination }`
+  - Response uses `data.parts` NOT `data.items`
+- `POST /api/inventory/scan-label` - AI label scanning
+- `POST /api/inventory/[id]/specs` - Save specs to inventory item
+
+### Database Tables:
+- `parts_inventory` - Main parts table (~18,000 items as of Feb 2026)
+- `customers` - Customer records
+- `vehicles` - Vehicle records
+- `work_orders` - Repair orders
+- `work_order_services` - Services on orders
+- `work_order_items` - Parts on orders
+
+## Testing in Production
+Since we test directly in production:
+
+1. **Always verify changes work:**
+   - Open browser Developer Console (F12)
+   - Check Console tab for errors
+   - Test the actual feature on arologik.com
+
+2. **API Testing:**
+   ```bash
+   # Test API endpoints directly:
+   curl -s "https://arologik.com/api/inventory/parts?search=oil" | jq '.'
+   
+   # Test locally:
+   curl -s "http://localhost:3000/api/inventory/parts?search=oil" | jq '.'
+   ```
+
+3. **Database Testing:**
+   ```bash
+   # Connect to database:
+   psql -d shopops3 -U shopops
+   
+   # Quick queries:
+   SELECT COUNT(*) FROM parts_inventory;
+   SELECT * FROM parts_inventory WHERE description ILIKE '%oil%' LIMIT 5;
+   ```
+
+## Common Issues & Solutions
+
+### Search returns no results:
+- Check API response structure matches frontend code
+- Verify `data.parts` not `data.items`
+- Check browser console for errors
+- Test API endpoint directly with curl
+
+### Changes not appearing in production:
+- **Did you run `npm run build`?** (Most common issue!)
+- Did you restart PM2?
+- Check PM2 logs for errors
+- Clear browser cache (Ctrl+Shift+R)
+
+### Database connection errors:
+- Check .env.local has DATABASE_URL
+- Verify PostgreSQL is running: `systemctl status postgresql`
+- Test connection: `psql -d shopops3 -U shopops`
+
+## Project Structure
+- `app/` - Next.js app router (pages and API routes)
+  - `app/api/` - API endpoints
+  - `app/inventory/scan-specs/` - Label scanning feature
+- `components/` - React components
+- `lib/` - Utilities (db.ts, utils.ts, etc.)
+- `db/migrations/` - Database migration scripts
+- `scripts/` - Node.js utility scripts
+
+## Remember:
+- ✅ Always rebuild after code changes: `npm run build`
+- ✅ Always restart PM2: `pm2 restart ai-automotive-repair`
+- ✅ Always test in production after deployment
+- ✅ Check browser console for errors
+- ✅ Use curl to test APIs directly
+- ✅ Database changes require migration files
