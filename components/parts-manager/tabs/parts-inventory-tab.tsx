@@ -3,64 +3,43 @@
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Pagination, PaginationInfo } from "@/components/ui/pagination"
-import { Search, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react"
+import { Search, Download, Upload, Loader2 } from "lucide-react"
 import Link from "next/link"
-
-interface Part {
-  id: number
-  part_number: string
-  description: string
-  vendor: string
-  cost: number
-  price: number
-  quantity_on_hand: number
-  quantity_available: number
-  quantity_allocated: number
-  reorder_point: number
-  location: string
-  bin_location: string | null
-  category: string
-  notes: string | null
-  last_synced_at: string | null
-  last_updated: string
-}
-
-type SortColumn = 'part_number' | 'description' | 'quantity_available' | 'cost' | 'price' | 'vendor' | 'location'
-type SortOrder = 'asc' | 'desc'
+import { DataTable } from "../data-table"
+import { columns, type Part } from "../columns"
+import { PartDetailsModal } from "../part-details-modal"
 
 export function PartsInventoryTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [parts, setParts] = useState<Part[]>([])
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
-  const [sortBy, setSortBy] = useState<SortColumn>('part_number')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
-  const [currentPage, setCurrentPage] = useState(1)
   const [totalParts, setTotalParts] = useState(0)
-  const itemsPerPage = 50
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  useEffect(() => {
+    // Reset to first page when search term changes
+    if (pageIndex !== 0) {
+      setPageIndex(0)
+    } else {
+      loadParts()
+    }
+  }, [searchTerm])
 
   useEffect(() => {
     loadParts()
-  }, [searchTerm, sortBy, sortOrder, currentPage])
-
-  // Reset to page 1 when search or sort changes
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1)
-    }
-  }, [searchTerm, sortBy, sortOrder])
+  }, [pageIndex, pageSize])
 
   async function loadParts() {
     try {
       setLoading(true)
-      const offset = (currentPage - 1) * itemsPerPage
       const params = new URLSearchParams({
         search: searchTerm,
-        sortBy,
-        sortOrder,
-        limit: itemsPerPage.toString(),
-        offset: offset.toString()
+        limit: pageSize.toString(),
+        offset: (pageIndex * pageSize).toString()
       })
 
       const response = await fetch(`/api/inventory/parts?${params}`)
@@ -76,30 +55,33 @@ export function PartsInventoryTab() {
     }
   }
 
-  function handleSort(column: SortColumn) {
-    if (sortBy === column) {
-      // Toggle order if same column
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      // New column, default to ascending
-      setSortBy(column)
-      setSortOrder('asc')
-    }
+  const handleRowClick = (part: Part) => {
+    setSelectedPart(part)
+    setIsModalOpen(true)
   }
 
-  function getSortIcon(column: SortColumn) {
-    if (sortBy !== column) {
-      return <ArrowUpDown size={14} className="opacity-50" />
+  const handleSavePart = async (updatedPart: Partial<Part>) => {
+    if (!selectedPart) return
+    
+    try {
+      const response = await fetch(`/api/inventory/parts/${selectedPart.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPart)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update part')
+      }
+      
+      // Reload parts to show updated data
+      await loadParts()
+      setIsModalOpen(false)
+      setSelectedPart(null)
+    } catch (error) {
+      console.error('Failed to save part:', error)
+      throw error
     }
-    return sortOrder === 'asc' 
-      ? <ArrowUp size={14} className="text-primary" />
-      : <ArrowDown size={14} className="text-primary" />
-  }
-
-  function getStockStatus(qty: number, reorderPoint: number) {
-    if (qty === 0) return { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' }
-    if (qty <= reorderPoint) return { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' }
-    return { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' }
   }
 
   async function handleExport() {
@@ -109,8 +91,6 @@ export function PartsInventoryTab() {
       // Fetch ALL parts (not just current page) for export
       const params = new URLSearchParams({
         search: searchTerm,
-        sortBy,
-        sortOrder,
         limit: '100000' // Large number to get all results
       })
 
@@ -176,7 +156,7 @@ export function PartsInventoryTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 h-full space-y-3">
       {/* Search and Actions */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
@@ -235,143 +215,33 @@ export function PartsInventoryTab() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto border border-border rounded-lg">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-card">
-                <th className="px-4 py-3 text-left">
-                  <button
-                    onClick={() => handleSort('part_number')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Part Number
-                    {getSortIcon('part_number')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left">
-                  <button
-                    onClick={() => handleSort('description')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Description
-                    {getSortIcon('description')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-center">
-                  <button
-                    onClick={() => handleSort('quantity_available')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground mx-auto"
-                  >
-                    Qty Available
-                    {getSortIcon('quantity_available')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-center font-medium text-muted-foreground">Reorder</th>
-                <th className="px-4 py-3 text-left">
-                  <button
-                    onClick={() => handleSort('location')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Location
-                    {getSortIcon('location')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left">
-                  <button
-                    onClick={() => handleSort('vendor')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Vendor
-                    {getSortIcon('vendor')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => handleSort('cost')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground ml-auto"
-                  >
-                    Cost
-                    {getSortIcon('cost')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => handleSort('price')}
-                    className="flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground ml-auto"
-                  >
-                    Retail
-                    {getSortIcon('price')}
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parts.map((part) => {
-                const status = getStockStatus(part.quantity_available, part.reorder_point)
-                return (
-                  <tr key={part.id} className="border-b border-border hover:bg-card/50">
-                    <td className="px-4 py-3 font-mono text-foreground">{part.part_number}</td>
-                    <td className="px-4 py-3 text-foreground max-w-xs truncate" title={part.description}>
-                      {part.description}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-3 py-1 rounded-full font-medium text-sm ${status.bg} ${status.text}`}>
-                        {part.quantity_available}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">
-                      {part.reorder_point}
-                    </td>
-                    <td className="px-4 py-3 text-foreground">
-                      {part.location}
-                      {part.bin_location && (
-                        <span className="text-xs text-muted-foreground ml-1">• {part.bin_location}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-foreground">{part.vendor}</td>
-                    <td className="px-4 py-3 text-right text-foreground">
-                      ${part.cost?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="px-4 py-3 text-right text-foreground">
-                      ${part.price?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline" className="h-7 bg-transparent">
-                          Add to RO
-                        </Button>
-                        {part.quantity_available <= part.reorder_point && (
-                          <Button size="sm" variant="outline" className="h-7 bg-transparent text-amber-600">
-                            Reorder
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="flex flex-col flex-1 min-h-0">
+          <DataTable 
+            columns={columns} 
+            data={parts} 
+            pageSize={pageSize}
+            pageIndex={pageIndex}
+            pageCount={Math.ceil(totalParts / pageSize)}
+            onPageChange={setPageIndex}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize)
+              setPageIndex(0) // Reset to first page when changing page size
+            }}
+            onRowClick={handleRowClick}
+          />
         </div>
       )}
 
-      {/* Pagination */}
-      {!loading && parts.length > 0 && (
-        <div className="flex items-center justify-between">
-          <PaginationInfo
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalParts / itemsPerPage)}
-            totalItems={totalParts}
-            itemsPerPage={itemsPerPage}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalParts / itemsPerPage)}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
+      {/* Part Details Modal */}
+      <PartDetailsModal
+        part={selectedPart}
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedPart(null)
+        }}
+        onSave={handleSavePart}
+      />
     </div>
   )
 }

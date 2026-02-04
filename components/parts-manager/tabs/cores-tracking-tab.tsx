@@ -10,7 +10,7 @@ export function CoresTrackingTab() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="overflow-x-auto border border-border rounded-lg">
         <table className="w-full text-sm">
           <thead>

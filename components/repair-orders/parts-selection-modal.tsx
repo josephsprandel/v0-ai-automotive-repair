@@ -24,7 +24,15 @@ interface PartWithPricing {
     location?: string
     binLocation?: string
     matchReason?: string  // AI's reason for selecting this inventory item
-    source?: string       // 'ai-inventory-match' | 'inventory' | 'partstech'
+    source?: string       // 'ai-inventory-match' | 'inventory' | 'partstech' | 'spec-matched-inventory'
+    // Spec matching properties
+    isSpecMatched?: boolean
+    hasOemMatch?: boolean
+    matchedOemApprovals?: string[]
+    viscosity?: string
+    apiClass?: string
+    aceaClass?: string
+    confidenceScore?: number
   }>
   selectedOption?: any
 }
@@ -131,10 +139,14 @@ export function PartsSelectionModal({
                               className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${
                                 isSelected 
                                   ? isInventory
-                                    ? 'border-green-500 bg-green-50 dark:bg-green-950/20 shadow-sm'
+                                    ? option.isSpecMatched
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-sm ring-2 ring-blue-200'
+                                      : 'border-green-500 bg-green-50 dark:bg-green-950/20 shadow-sm'
                                     : 'border-primary bg-primary/5 shadow-sm'
                                   : isInventory
-                                    ? 'border-green-200 hover:border-green-400 hover:bg-green-50/50 dark:border-green-800 dark:hover:bg-green-950/10'
+                                    ? option.isSpecMatched
+                                      ? 'border-blue-200 hover:border-blue-400 hover:bg-blue-50/50 dark:border-blue-800 dark:hover:bg-blue-950/10'
+                                      : 'border-green-200 hover:border-green-400 hover:bg-green-50/50 dark:border-green-800 dark:hover:bg-green-950/10'
                                     : 'border-border hover:border-primary/50 hover:bg-muted/50'
                               }`}
                             >
@@ -155,11 +167,22 @@ export function PartsSelectionModal({
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start gap-4">
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                                       <span className="font-medium text-foreground">{option.brand || option.vendor}</span>
                                       {option.inStock && (
                                         <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
                                           ✓ In Stock
+                                        </Badge>
+                                      )}
+                                      {/* Spec Match Badges */}
+                                      {option.isSpecMatched && option.hasOemMatch && (
+                                        <Badge className="text-xs bg-blue-500 text-white">
+                                          ✅ OEM Approved
+                                        </Badge>
+                                      )}
+                                      {option.isSpecMatched && !option.hasOemMatch && (
+                                        <Badge className="text-xs bg-blue-400 text-white">
+                                          ✓ Verified Specs
                                         </Badge>
                                       )}
                                     </div>
@@ -171,8 +194,32 @@ export function PartsSelectionModal({
                                         {option.description}
                                       </p>
                                     )}
-                                    {/* AI Match Reason - show why this inventory item was selected */}
-                                    {option.matchReason && option.source === 'ai-inventory-match' && (
+                                    {/* Spec Match Details */}
+                                    {option.isSpecMatched && option.matchReason && (
+                                      <div className="mt-1 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+                                        <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                                          🎯 {option.matchReason}
+                                        </p>
+                                        {option.viscosity && (
+                                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                                            Viscosity: {option.viscosity}
+                                            {option.apiClass && ` • API ${option.apiClass}`}
+                                            {option.aceaClass && ` • ACEA ${option.aceaClass}`}
+                                          </p>
+                                        )}
+                                        {option.matchedOemApprovals && option.matchedOemApprovals.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {option.matchedOemApprovals.map((approval: string, i: number) => (
+                                              <Badge key={i} variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700">
+                                                {approval}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    {/* AI Match Reason - show why this inventory item was selected (legacy) */}
+                                    {option.matchReason && !option.isSpecMatched && (option.source === 'ai-inventory-match' || option.source === 'ai-inventory-match-legacy') && (
                                       <p className="text-xs text-green-600 dark:text-green-400 mt-1 italic">
                                         🤖 {option.matchReason}
                                       </p>

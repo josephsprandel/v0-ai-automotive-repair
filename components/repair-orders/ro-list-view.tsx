@@ -327,7 +327,7 @@ export function ROListView({ onSelectRO }: { onSelectRO?: (roId: string) => void
 
         {/* Pagination */}
         {!loading && workOrders.length > 0 && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-t pt-4">
             <PaginationInfo
               currentPage={currentPage}
               totalPages={Math.ceil(totalWorkOrders / itemsPerPage)}

@@ -13,7 +13,7 @@ export function PurchaseOrdersTab() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex justify-between">
         <div className="flex gap-2 flex-1 mr-4">
           <Input placeholder="Search PO number..." className="bg-card border-border" />

@@ -7,6 +7,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
+export async function DELETE(request: NextRequest) {
+  try {
+    // Delete all parts from inventory
+    const result = await pool.query('DELETE FROM parts_inventory');
+    
+    return NextResponse.json({
+      success: true,
+      message: `Deleted ${result.rowCount} parts from inventory`
+    });
+  } catch (error: any) {
+    console.error('[Inventory Delete API] Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to delete parts',
+      details: error.message
+    }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

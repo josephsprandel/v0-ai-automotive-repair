@@ -35,8 +35,11 @@ export async function GET(
         wo.labor_total, wo.parts_total, wo.sublets_total,
         wo.tax_amount, wo.total, wo.payment_status, wo.amount_paid,
         wo.created_at, wo.updated_at,
-        c.customer_name, c.phone_primary, c.email,
-        v.year, v.make, v.model, v.vin, v.license_plate,
+        c.customer_name, c.phone_primary, c.phone_secondary, c.phone_mobile, 
+        c.email, c.address_line1, c.address_line2, c.city, c.state as customer_state, c.zip,
+        v.year, v.make, v.model, v.submodel, v.engine, v.transmission, 
+        v.color, v.vin, v.license_plate, v.license_plate_state, 
+        v.mileage, v.manufacture_date,
         u.id as created_by_id
       FROM work_orders wo
       LEFT JOIN customers c ON wo.customer_id = c.id

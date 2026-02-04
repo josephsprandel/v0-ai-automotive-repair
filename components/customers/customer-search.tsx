@@ -278,7 +278,7 @@ export function CustomerSearch({ onSelectCustomer }: { onSelectCustomer?: (id: s
 
       {/* Pagination */}
       {!loading && customers.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-t pt-4">
           <PaginationInfo
             currentPage={currentPage}
             totalPages={Math.ceil(totalCustomers / itemsPerPage)}

@@ -25,13 +25,18 @@ import {
   Sparkles,
   CheckCircle,
   FileText,
+  Mail,
+  MapPin,
+  Car,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import type { ServiceData, LineItem } from "./ro-creation-wizard"
 import { EditableServiceCard, createLineItem } from "./editable-service-card"
 import type { LineItemCategory } from "./editable-service-card"
 import { PartsSelectionModal } from "./parts-selection-modal"
+import { VehicleEditDialog } from "@/components/customers/vehicle-edit-dialog"
 
 // Workflow stages - MOVED OUTSIDE to prevent re-creation on every render
 const WORKFLOW_STAGES = [
@@ -144,15 +149,29 @@ interface WorkOrder {
   ro_number: string
   customer_id: number
   vehicle_id: number
+  state: string
   customer_name: string
   phone_primary: string
+  phone_secondary: string | null
+  phone_mobile: string | null
   email: string | null
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  customer_state: string | null
+  zip: string | null
   year: number
   make: string
   model: string
+  submodel: string | null
+  engine: string | null
+  transmission: string | null
+  color: string | null
   vin: string
   license_plate: string | null
-  state: string
+  license_plate_state: string | null
+  mileage: number | null
+  manufacture_date: string | null
   date_opened: string
   date_promised: string | null
   date_closed: string | null
@@ -183,6 +202,22 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set())
   const [dragEnabledIndex, setDragEnabledIndex] = useState<number | null>(null)
+  
+  // Customer and Vehicle edit states
+  const [customerEditOpen, setCustomerEditOpen] = useState(false)
+  const [vehicleEditOpen, setVehicleEditOpen] = useState(false)
+  const [customerFormData, setCustomerFormData] = useState({
+    customer_name: "",
+    phone_primary: "",
+    phone_secondary: "",
+    phone_mobile: "",
+    email: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    zip: "",
+  })
   
   // AI Recommendation states
   const [aiDialogOpen, setAiDialogOpen] = useState(false)
@@ -844,6 +879,82 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
     })
   }, [])
 
+  const handleOpenCustomerEdit = useCallback(() => {
+    if (!workOrder) return
+    setCustomerFormData({
+      customer_name: workOrder.customer_name || "",
+      phone_primary: workOrder.phone_primary || "",
+      phone_secondary: workOrder.phone_secondary ?? "",
+      phone_mobile: workOrder.phone_mobile ?? "",
+      email: workOrder.email ?? "",
+      address_line1: workOrder.address_line1 ?? "",
+      address_line2: workOrder.address_line2 ?? "",
+      city: workOrder.city ?? "",
+      state: workOrder.state ?? "",
+      zip: workOrder.zip ?? "",
+    })
+    setCustomerEditOpen(true)
+  }, [workOrder])
+
+  const handleSaveCustomer = useCallback(async () => {
+    if (!workOrder) return
+    const previousWorkOrder = workOrder
+    
+    // Optimistically update
+    setWorkOrder({ ...workOrder, ...customerFormData })
+    
+    try {
+      const response = await fetch(`/api/customers/${workOrder.customer_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: customerFormData.customer_name,
+          phone_primary: customerFormData.phone_primary,
+          phone_secondary: customerFormData.phone_secondary || null,
+          phone_mobile: customerFormData.phone_mobile || null,
+          email: customerFormData.email || null,
+          address_line1: customerFormData.address_line1 || null,
+          address_line2: customerFormData.address_line2 || null,
+          city: customerFormData.city || null,
+          state: customerFormData.state || null,
+          zip: customerFormData.zip || null,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update customer")
+      }
+
+      setCustomerEditOpen(false)
+      showToast("Customer updated successfully", "success")
+    } catch (err: any) {
+      setWorkOrder(previousWorkOrder)
+      showToast(err.message || "Failed to update customer", "error")
+    }
+  }, [workOrder, customerFormData, showToast])
+
+  const handleVehicleUpdateSuccess = useCallback((updatedVehicle: any) => {
+    if (!workOrder) return
+    
+    // Update work order with new vehicle data
+    setWorkOrder({
+      ...workOrder,
+      year: updatedVehicle.year,
+      make: updatedVehicle.make,
+      model: updatedVehicle.model,
+      submodel: updatedVehicle.submodel,
+      engine: updatedVehicle.engine,
+      transmission: updatedVehicle.transmission,
+      color: updatedVehicle.color,
+      vin: updatedVehicle.vin,
+      license_plate: updatedVehicle.license_plate,
+      license_plate_state: updatedVehicle.license_plate_state,
+      mileage: updatedVehicle.mileage,
+      manufacture_date: updatedVehicle.manufacture_date,
+    })
+    showToast("Vehicle updated successfully", "success")
+  }, [workOrder, showToast])
+
   // Load work order and items from database
   useEffect(() => {
     const fetchWorkOrder = async () => {
@@ -976,9 +1087,16 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
     );
   }
 
+  // Build full address
+  const fullAddress = [
+    workOrder.address_line1,
+    workOrder.address_line2,
+    [workOrder.city, workOrder.customer_state, workOrder.zip].filter(Boolean).join(", ")
+  ].filter(Boolean).join(", ")
+
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Header with RO Number and Actions */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {onClose && (
@@ -986,34 +1104,165 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
               <ArrowLeft size={20} />
             </Button>
           )}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{workOrder.ro_number}</h1>
-            <p className="text-sm text-muted-foreground">
-              {workOrder.customer_name} • {workOrder.year} {workOrder.make} {workOrder.model} • {workOrder.vin}
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-foreground">{workOrder.ro_number}</h1>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="outline" size="sm" className="gap-2 bg-transparent">
             <Printer size={16} />
             Print
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 bg-transparent"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? <X size={16} /> : <Edit2 size={16} />}
-            {isEditing ? "Cancel" : "Edit"}
-          </Button>
-          {isEditing && (
-            <Button size="sm" onClick={handleSave} className="gap-2">
-              <Save size={16} />
-              Save
-            </Button>
-          )}
         </div>
+      </div>
+
+      {/* Customer and Vehicle Cards - Horizontal Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Customer Card */}
+        <Card className="p-6 border-border relative">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-blue-600 flex items-center justify-center text-accent-foreground font-bold text-lg flex-shrink-0">
+                {workOrder.customer_name.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{workOrder.customer_name}</h2>
+                <p className="text-xs text-muted-foreground">Customer Information</p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={handleOpenCustomerEdit} className="gap-2">
+              <Edit2 size={14} />
+            </Button>
+          </div>
+          
+          <div className="space-y-3 pr-24">
+            <div className="flex items-start gap-3">
+              <Phone size={16} className="text-accent flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="text-sm font-medium text-foreground">{workOrder.phone_primary}</p>
+                {workOrder.phone_secondary && (
+                  <p className="text-xs text-muted-foreground">Alt: {workOrder.phone_secondary}</p>
+                )}
+                {workOrder.phone_mobile && (
+                  <p className="text-xs text-muted-foreground">Mobile: {workOrder.phone_mobile}</p>
+                )}
+              </div>
+            </div>
+
+            {workOrder.email && (
+              <div className="flex items-start gap-3">
+                <Mail size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="text-sm font-medium text-foreground truncate">{workOrder.email}</p>
+                </div>
+              </div>
+            )}
+
+            {fullAddress && (
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Address</p>
+                  <p className="text-sm font-medium text-foreground">{fullAddress}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="absolute bottom-6 right-6 flex flex-col gap-2 w-24">
+            <Button size="sm" variant="outline" className="gap-1 bg-transparent w-full">
+              <MessageSquare size={14} />
+              SMS
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1 bg-transparent w-full">
+              <Phone size={14} />
+              Call
+            </Button>
+            {workOrder.email && (
+              <Button size="sm" variant="outline" className="gap-1 bg-transparent w-full">
+                <Mail size={14} />
+                Email
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {/* Vehicle Card */}
+        <Card className="p-6 border-border">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                <Car size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {workOrder.year} {workOrder.make} {workOrder.model}
+                </h2>
+                <p className="text-xs text-muted-foreground">Vehicle Information</p>
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setVehicleEditOpen(true)} className="gap-2">
+              <Edit2 size={14} />
+            </Button>
+          </div>
+
+          <div className="space-y-2.5">
+            {/* Row 1: VIN and Prod. Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">VIN:</p>
+                <p className="text-sm font-medium text-foreground font-mono leading-tight">{workOrder.vin}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Prod. Date:</p>
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  {workOrder.manufacture_date 
+                    ? (() => {
+                        // Parse YYYY-MM format manually to avoid timezone issues
+                        const [year, month] = workOrder.manufacture_date.split('-')
+                        return `${parseInt(month)}/${year}`
+                      })()
+                    : '—'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Row 2: Engine */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Engine:</p>
+              <p className="text-sm font-medium text-foreground leading-tight">{workOrder.engine || '—'}</p>
+            </div>
+
+            {/* Row 3: Plate and Color */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Plate:</p>
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  {workOrder.license_plate || '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Color:</p>
+                <p className="text-sm font-medium text-foreground leading-tight">{workOrder.color || '—'}</p>
+              </div>
+            </div>
+
+            {/* Row 4: Odometer In and Out */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Odometer In:</p>
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  {workOrder.mileage ? workOrder.mileage.toLocaleString() : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Out:</p>
+                <p className="text-sm font-medium text-foreground leading-tight">—</p>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Horizontal Status Workflow Bar */}
@@ -1217,23 +1466,126 @@ export function RODetailView({ roId, onClose }: { roId: string; onClose?: () => 
           </Button>
         </div>
 
-        {/* Contact Info - Compact Footer */}
-        {!isEditing && (
-          <div className="flex items-center gap-2 pt-2 border-t border-border">
-            <span className="text-sm text-muted-foreground">
-              {workOrder.customer_name} • {workOrder.email || "No email"} • {workOrder.phone_primary}
-            </span>
-            <Button size="sm" variant="ghost" className="gap-1 ml-auto">
-              <MessageSquare size={14} />
-              SMS
+      </div>
+
+      {/* Customer Edit Dialog */}
+      <Dialog open={customerEditOpen} onOpenChange={setCustomerEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Customer Name</Label>
+              <Input
+                value={customerFormData.customer_name}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, customer_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                value={customerFormData.email}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Primary Phone</Label>
+              <Input
+                value={customerFormData.phone_primary}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, phone_primary: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Secondary Phone</Label>
+              <Input
+                value={customerFormData.phone_secondary || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, phone_secondary: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Mobile Phone</Label>
+              <Input
+                value={customerFormData.phone_mobile || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, phone_mobile: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Address Line 1</Label>
+              <Input
+                value={customerFormData.address_line1 || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, address_line1: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Address Line 2</Label>
+              <Input
+                value={customerFormData.address_line2 || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, address_line2: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>City</Label>
+              <Input
+                value={customerFormData.city || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, city: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>State</Label>
+              <Input
+                value={customerFormData.state || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, state: e.target.value })}
+                maxLength={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Zip</Label>
+              <Input
+                value={customerFormData.zip || ""}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, zip: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setCustomerEditOpen(false)}>
+              Cancel
             </Button>
-            <Button size="sm" variant="ghost" className="gap-1">
-              <Phone size={14} />
-              Call
+            <Button onClick={handleSaveCustomer}>
+              Save Changes
             </Button>
           </div>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vehicle Edit Dialog */}
+      <VehicleEditDialog
+        open={vehicleEditOpen}
+        onOpenChange={setVehicleEditOpen}
+        vehicle={workOrder ? {
+          id: workOrder.vehicle_id.toString(),
+          customer_id: workOrder.customer_id.toString(),
+          vin: workOrder.vin,
+          year: workOrder.year,
+          make: workOrder.make,
+          model: workOrder.model,
+          submodel: workOrder.submodel,
+          engine: workOrder.engine,
+          transmission: workOrder.transmission,
+          color: workOrder.color,
+          license_plate: workOrder.license_plate,
+          license_plate_state: workOrder.license_plate_state,
+          mileage: workOrder.mileage,
+          manufacture_date: workOrder.manufacture_date,
+          notes: null,
+          is_active: true,
+          created_at: workOrder.created_at,
+          updated_at: workOrder.updated_at,
+        } : null}
+        onSuccess={handleVehicleUpdateSuccess}
+      />
 
       {toast && (
         <div

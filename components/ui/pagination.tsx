@@ -29,7 +29,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 relative"
         onClick={() => onPageChange(1)}
         disabled={currentPage === 1}
       >
@@ -41,7 +41,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 relative"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
@@ -102,7 +102,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 relative"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
@@ -114,7 +114,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <Button
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 relative"
         onClick={() => onPageChange(totalPages)}
         disabled={currentPage === totalPages}
       >

@@ -21,6 +21,7 @@ interface Vehicle {
   license_plate: string | null
   license_plate_state: string | null
   mileage: number | null
+  manufacture_date: string | null
   notes: string | null
   is_active: boolean
   created_at: string
@@ -49,6 +50,7 @@ export function VehicleEditDialog({ open, onOpenChange, vehicle, onSuccess }: Ve
     license_plate: "",
     license_plate_state: "",
     mileage: "",
+    manufacture_date: "",
     notes: "",
   })
 
@@ -67,6 +69,7 @@ export function VehicleEditDialog({ open, onOpenChange, vehicle, onSuccess }: Ve
         license_plate: vehicle.license_plate || "",
         license_plate_state: vehicle.license_plate_state || "",
         mileage: vehicle.mileage?.toString() || "",
+        manufacture_date: vehicle.manufacture_date || "",
         notes: vehicle.notes || "",
       })
       setError(null)
@@ -106,6 +109,7 @@ export function VehicleEditDialog({ open, onOpenChange, vehicle, onSuccess }: Ve
           license_plate: formData.license_plate.trim() || null,
           license_plate_state: formData.license_plate_state.trim() || null,
           mileage: formData.mileage ? parseInt(formData.mileage) : null,
+          manufacture_date: formData.manufacture_date.trim() || null,
           notes: formData.notes.trim() || null,
         }),
       })
@@ -241,6 +245,16 @@ export function VehicleEditDialog({ open, onOpenChange, vehicle, onSuccess }: Ve
               value={formData.color}
               onChange={(e) => handleChange("color", e.target.value)}
               placeholder="Silver"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Production Date</Label>
+            <Input
+              type="month"
+              value={formData.manufacture_date}
+              onChange={(e) => handleChange("manufacture_date", e.target.value)}
+              placeholder="YYYY-MM"
             />
           </div>
         </div>
