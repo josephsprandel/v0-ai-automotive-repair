@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Package, AlertTriangle, ShoppingCart, Truck, Users, RotateCcw, Plus, Search, Filter, ExternalLink } from "lucide-react"
+import { Package, AlertTriangle, ShoppingCart, Truck, Users, RotateCcw, Plus, Search, Filter, ExternalLink, Camera } from "lucide-react"
 import { PartsInventoryTab } from "./tabs/parts-inventory-tab"
 import { PurchaseOrdersTab } from "./tabs/purchase-orders-tab"
 import { ReceivingTab } from "./tabs/receiving-tab"
@@ -18,7 +18,7 @@ export function PartsManagerDashboard() {
   const [activeTab, setActiveTab] = useState("inventory")
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col flex-1 min-h-0 space-y-4">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -26,6 +26,12 @@ export function PartsManagerDashboard() {
           <p className="text-sm text-muted-foreground mt-1">Manage inventory, orders, vendors, and cores</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/inventory/scan-specs">
+            <Button size="lg" variant="outline" className="gap-2">
+              <Camera size={18} />
+              Scan Specs
+            </Button>
+          </Link>
           <Link href="/parts-search">
             <Button size="lg" variant="outline" className="gap-2">
               <Search size={18} />
@@ -96,7 +102,7 @@ export function PartsManagerDashboard() {
       </div>
 
       {/* Main Tabs */}
-      <Card className="border-border">
+      <Card className="flex flex-col flex-1 min-h-0 border-border">
         <CardHeader className="border-b border-border pb-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 bg-transparent border-b border-border rounded-none p-0 h-auto">
@@ -139,21 +145,21 @@ export function PartsManagerDashboard() {
           </Tabs>
         </CardHeader>
 
-        <CardContent className="pt-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsContent value="inventory" className="space-y-4">
+        <CardContent className="flex flex-col flex-1 min-h-0 pt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+            <TabsContent value="inventory">
               <PartsInventoryTab />
             </TabsContent>
-            <TabsContent value="orders" className="space-y-4">
+            <TabsContent value="orders">
               <PurchaseOrdersTab />
             </TabsContent>
-            <TabsContent value="receiving" className="space-y-4">
+            <TabsContent value="receiving">
               <ReceivingTab />
             </TabsContent>
-            <TabsContent value="vendors" className="space-y-4">
+            <TabsContent value="vendors">
               <VendorManagementTab />
             </TabsContent>
-            <TabsContent value="cores" className="space-y-4">
+            <TabsContent value="cores">
               <CoresTrackingTab />
             </TabsContent>
           </Tabs>
