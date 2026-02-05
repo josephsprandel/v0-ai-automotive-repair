@@ -1,9 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { isMockDataEnabled, mockWorkOrders, mockCustomers, mockVehicles } from '@/lib/mock-data'
 
 // GET /api/work-orders - List work orders with optional filters
 export async function GET(request: NextRequest) {
   try {
+    // V0 PREVIEW MODE: Return mock data if enabled
+    if (isMockDataEnabled()) {
+      const searchParams = request.nextUrl.searchParams
+      const customerId = searchParams.get('customer_id')
+      const vehicleId = searchParams.get('vehicle_id')
+      const state = searchParams.get('state')
+      const page = parseInt(searchParams.get('page') || '1')
+      const limit = parseInt(searchParams.get('limit') || '50')
+      
+      // Filter mock data
+      let filteredOrders = mockWorkOrders
+      if (customerId) {
+        filteredOrders = filteredOrders.filter(wo => wo.customerId === parseInt(customerId))
+      }
+      if (vehicleId) {
+        filteredOrders = filteredOrders.filter(wo => wo.vehicleId === parseInt(vehicleId))
+      }
+      if (state) {
+        filteredOrders = filteredOrders.filter(wo => wo.status === state)
+      }
+      
+      const total = filteredOrders.length
+      const offset = (page - 1) * limit
+      const paginatedOrders = filteredOrders.slice(offset, offset + limit)
+      
+      // Join with customer and vehicle data
+      const ordersWithDetails = paginatedOrders.map(wo => {
+        const customer = mockCustomers.find(c => c.id === wo.customerId)
+        const vehicle = mockVehicles.find(v => v.id === wo.vehicleId)
+        
+        return {
+          ...wo,
+          customer_name: customer ? `${customer.firstName} ${customer.lastName}` : null,
+          phone_primary: customer?.phone,
+          email: customer?.email,
+          year: vehicle?.year,
+          make: vehicle?.make,
+          model: vehicle?.model,
+          vin: vehicle?.vin,
+          license_plate: vehicle?.licensePlate,
+        }
+      })
+      
+      return NextResponse.json({
+        work_orders: ordersWithDetails,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      })
+    }
+    
     const searchParams = request.nextUrl.searchParams
     const customerId = searchParams.get('customer_id')
     const vehicleId = searchParams.get('vehicle_id')

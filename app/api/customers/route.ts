@@ -1,9 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { isMockDataEnabled, mockCustomers } from '@/lib/mock-data'
 
 // GET /api/customers - List customers with optional search and pagination
 export async function GET(request: NextRequest) {
   try {
+    // V0 PREVIEW MODE: Return mock data if enabled
+    if (isMockDataEnabled()) {
+      const searchParams = request.nextUrl.searchParams
+      const search = searchParams.get('search') || ''
+      const page = parseInt(searchParams.get('page') || '1')
+      const limit = parseInt(searchParams.get('limit') || '50')
+      
+      // Filter mock data by search if provided
+      let filteredCustomers = mockCustomers
+      if (search) {
+        const searchLower = search.toLowerCase()
+        filteredCustomers = mockCustomers.filter(c => 
+          `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchLower) ||
+          c.email?.toLowerCase().includes(searchLower) ||
+          c.phone?.includes(search)
+        )
+      }
+      
+      const total = filteredCustomers.length
+      const offset = (page - 1) * limit
+      const paginatedCustomers = filteredCustomers.slice(offset, offset + limit)
+      
+      return NextResponse.json({
+        customers: paginatedCustomers.map(c => ({
+          id: c.id,
+          customer_name: `${c.firstName} ${c.lastName}`,
+          first_name: c.firstName,
+          last_name: c.lastName,
+          phone_primary: c.phone,
+          email: c.email,
+          address_line1: c.address,
+          city: c.city,
+          state: c.state,
+          zip: c.zipCode,
+          is_active: true,
+          created_at: c.createdAt
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      })
+    }
+    
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
     const page = parseInt(searchParams.get('page') || '1')

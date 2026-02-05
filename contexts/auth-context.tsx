@@ -52,6 +52,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const PUBLIC_ROUTES = ['/login', '/forgot-password', '/reset-password']
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // V0 PREVIEW MODE: Check if authentication is disabled
+  const isAuthDisabled = process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true'
+  
   const [user, setUser] = useState<User | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
   const [permissions, setPermissions] = useState<string[]>([])
@@ -60,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   
-  const isAuthenticated = !!user
+  const isAuthenticated = isAuthDisabled || !!user
 
   // Fetch current user from /api/auth/me
   const fetchUser = useCallback(async (token: string) => {
@@ -96,6 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
+      // V0 PREVIEW MODE: Skip authentication if disabled
+      if (isAuthDisabled) {
+        // Set mock user for preview mode
+        setUser({
+          id: 1,
+          email: 'preview@example.com',
+          name: 'Preview User'
+        })
+        setRoles([{ id: 1, name: 'Admin', description: 'Full access' }])
+        setPermissions(['*']) // All permissions
+        setIsLoading(false)
+        return
+      }
+      
       const token = localStorage.getItem('auth_token')
       
       if (token) {
@@ -106,14 +123,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     checkAuth()
-  }, [fetchUser])
+  }, [fetchUser, isAuthDisabled])
 
   // Redirect to login if not authenticated (except for public routes)
   useEffect(() => {
+    // V0 PREVIEW MODE: Skip redirect if auth is disabled
+    if (isAuthDisabled) return
+    
     if (!isLoading && !isAuthenticated && !PUBLIC_ROUTES.includes(pathname)) {
       router.push('/login')
     }
-  }, [isLoading, isAuthenticated, pathname, router])
+  }, [isLoading, isAuthenticated, pathname, router, isAuthDisabled])
 
   // Login function
   async function login(email: string, password: string) {
