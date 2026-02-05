@@ -68,6 +68,24 @@ export async function POST(
     const needsReview = extracted.confidence_score < 0.8
     const isVerified = extracted.confidence_score >= 0.8
 
+    // Build approvals string combining industry standards and OEM approvals
+    const approvalsParts: string[] = []
+    
+    // Add industry standards
+    if (extracted.api_service_class) approvalsParts.push(`API ${extracted.api_service_class}`)
+    if (extracted.acea_class) approvalsParts.push(`ACEA ${extracted.acea_class}`)
+    if (extracted.ilsac_class) approvalsParts.push(`ILSAC ${extracted.ilsac_class}`)
+    if (extracted.jaso_class) approvalsParts.push(`JASO ${extracted.jaso_class}`)
+    
+    // Add OEM approvals
+    if (extracted.oem_approvals && extracted.oem_approvals.length > 0) {
+      extracted.oem_approvals.forEach((approval: any) => {
+        approvalsParts.push(approval.normalized_code || approval.raw_text)
+      })
+    }
+    
+    const approvalsString = approvalsParts.length > 0 ? approvalsParts.join(', ') : null
+
     await client.query(`
       UPDATE parts_inventory 
       SET 
@@ -76,16 +94,21 @@ export async function POST(
         needs_spec_review = $2,
         label_photo_url = $3,
         has_detailed_specs = true,
+        approvals = $4,
         last_updated = NOW()
-      WHERE id = $4
+      WHERE id = $5
     `, [
       isVerified,
       needsReview,
       photoUrl || null,
+      approvalsString,
       inventoryId
     ])
 
     console.log(`  ✓ Updated parts_inventory`)
+    if (approvalsString) {
+      console.log(`  ✓ Set approvals: ${approvalsString}`)
+    }
 
     // Prepare OEM approvals as JSONB array of normalized codes
     const oemApprovalsArray = extracted.oem_approvals?.map((approval: any) => 
