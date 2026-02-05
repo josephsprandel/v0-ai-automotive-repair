@@ -357,9 +357,12 @@ Return EMPTY parts array for:
               }
 
               // STEP 3: ENHANCED FLUID MATCHING - Check fluid_specifications table for spec-based matching
-              const fluidKeywords = ['oil', 'coolant', 'fluid', 'antifreeze', 'brake fluid', 'transmission fluid', 'differential']
-              const isFluid = fluidKeywords.some(keyword => 
-                part.description.toLowerCase().includes(keyword)
+              // IMPORTANT: Don't treat filters as fluids even if they contain "oil" or "filter"
+              const partDescLower = part.description.toLowerCase()
+              const isFilter = partDescLower.includes('filter')
+              const fluidKeywords = ['engine oil', 'motor oil', 'transmission fluid', 'coolant', 'antifreeze', 'brake fluid', 'differential', 'gear oil']
+              const isFluid = !isFilter && fluidKeywords.some(keyword => 
+                partDescLower.includes(keyword)
               )
 
               let specMatchedInventory: any[] = []
@@ -486,6 +489,9 @@ Return EMPTY parts array for:
                     console.log(`  ⚠️ No spec-verified fluids found, using legacy AI matching`)
                     
                     // Get in-stock fluids that might match (broader search than part-number matching)
+                    // CRITICAL FIX: Only search for the actual part description, not all fluid types
+                    // This prevents "oil filter" from matching "engine oil"
+                    const searchPattern = `%${part.description}%`
                     const inventoryFluids = await query(`
                       SELECT 
                         part_number,
@@ -497,23 +503,12 @@ Return EMPTY parts array for:
                         location,
                         bin_location
                       FROM parts_inventory
-                      WHERE (
-                        LOWER(description) ILIKE $1
-                        OR LOWER(description) ILIKE '%motor oil%'
-                        OR LOWER(description) ILIKE '%engine oil%'
-                        OR LOWER(description) ILIKE '%synthetic oil%'
-                        OR LOWER(description) ILIKE '%coolant%'
-                        OR LOWER(description) ILIKE '%antifreeze%'
-                        OR LOWER(description) ILIKE '%brake fluid%'
-                        OR LOWER(description) ILIKE '%transmission fluid%'
-                        OR LOWER(description) ILIKE '%atf%'
-                        OR LOWER(description) ILIKE '%differential%'
-                        OR LOWER(description) ILIKE '%gear oil%'
-                      )
-                      AND quantity_available > 0
+                      WHERE LOWER(description) ILIKE LOWER($1)
+                        AND quantity_available > 0
+                        AND LOWER(description) NOT ILIKE '%filter%'
                       ORDER BY price ASC
                       LIMIT 20
-                    `, [`%${part.description.split(' ')[0]}%`])
+                    `, [searchPattern])
 
                     if (inventoryFluids.rows.length > 0) {
                       console.log(`  Found ${inventoryFluids.rows.length} potential inventory fluids (legacy)`)
