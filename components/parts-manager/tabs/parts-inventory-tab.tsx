@@ -100,25 +100,33 @@ export function PartsInventoryTab() {
       const data = await response.json()
       const allParts = data.parts || []
 
-      // Convert to CSV
+      // Convert to CSV - Include ALL fields for mass editing
       const headers = [
-        'Part Number',
-        'Description',
-        'Vendor',
-        'Cost',
-        'Retail Price',
-        'Qty On Hand',
-        'Qty Available',
-        'Reorder Point',
-        'Location',
-        'Bin Location',
-        'Category',
-        'Notes'
+        'id',
+        'part_number',
+        'description',
+        'vendor',
+        'cost',
+        'price',
+        'quantity_on_hand',
+        'quantity_available',
+        'quantity_allocated',
+        'reorder_point',
+        'location',
+        'bin_location',
+        'category',
+        'approvals',
+        'notes',
+        'shopware_id',
+        'last_synced_at',
+        'last_updated',
+        'created_at'
       ]
 
       const csvRows = [
         headers.join(','),
         ...allParts.map((part: Part) => [
+          part.id,
           `"${part.part_number}"`,
           `"${part.description.replace(/"/g, '""')}"`,
           `"${part.vendor}"`,
@@ -126,11 +134,17 @@ export function PartsInventoryTab() {
           part.price.toFixed(2),
           part.quantity_on_hand,
           part.quantity_available,
+          part.quantity_allocated,
           part.reorder_point,
           `"${part.location}"`,
           `"${part.bin_location || ''}"`,
           `"${part.category}"`,
-          `"${(part.notes || '').replace(/"/g, '""')}"`
+          `"${(part.approvals || '').replace(/"/g, '""')}"`,
+          `"${(part.notes || '').replace(/"/g, '""')}"`,
+          `"${part.shopware_id || ''}"`,
+          `"${part.last_synced_at || ''}"`,
+          `"${part.last_updated || ''}"`,
+          `"${part.created_at || ''}"`
         ].join(','))
       ]
 

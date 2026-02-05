@@ -13,6 +13,7 @@ export default function InventoryImportPage() {
   const [result, setResult] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [importFormat, setImportFormat] = useState<'shopware' | 'roengine'>('shopware');
 
   // Load current inventory stats on mount
   useEffect(() => {
@@ -43,7 +44,12 @@ export default function InventoryImportPage() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch('/api/inventory/import', {
+      // Choose endpoint based on format
+      const endpoint = importFormat === 'roengine' 
+        ? '/api/inventory/import-roengine'
+        : '/api/inventory/import';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData
       });
@@ -77,7 +83,7 @@ export default function InventoryImportPage() {
             <div>
               <h1 className="text-3xl font-bold mb-2">Import Parts Inventory</h1>
               <p className="text-muted-foreground">
-                Import parts from ShopWare CSV export to sync inventory
+                Import parts from ShopWare exports or RO Engine CSV for mass editing
               </p>
             </div>
 
@@ -110,9 +116,46 @@ export default function InventoryImportPage() {
             {/* Import Form */}
             <Card className="p-6">
               <div className="space-y-6">
+                {/* Format Selector */}
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    Import Format
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setImportFormat('shopware')}
+                      disabled={importing}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        importFormat === 'shopware'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                      } disabled:opacity-50`}
+                    >
+                      <div className="font-semibold mb-1">ShopWare Export</div>
+                      <div className="text-xs text-muted-foreground">
+                        Daily sync from ShopWare inventory
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setImportFormat('roengine')}
+                      disabled={importing}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        importFormat === 'roengine'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                      } disabled:opacity-50`}
+                    >
+                      <div className="font-semibold mb-1">RO Engine CSV</div>
+                      <div className="text-xs text-muted-foreground">
+                        Mass edit exported CSV (includes approvals)
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    ShopWare Parts CSV Export
+                    {importFormat === 'shopware' ? 'ShopWare Parts CSV Export' : 'RO Engine Parts CSV'}
                   </label>
                   <input
                     type="file"
@@ -210,31 +253,74 @@ export default function InventoryImportPage() {
             <Card className="p-6 bg-muted/30">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
-                Instructions
+                {importFormat === 'shopware' ? 'ShopWare Import Instructions' : 'RO Engine Import Instructions'}
               </h3>
-              <ol className="list-decimal ml-5 space-y-2 text-sm text-muted-foreground">
-                <li>Export parts inventory from ShopWare as CSV format</li>
-                <li>Ensure CSV includes at minimum: part_number, description, price</li>
-                <li>Upload the CSV file using the form above</li>
-                <li>Import will update existing parts or add new ones (UPSERT)</li>
-                <li>Run this daily to keep inventory synchronized</li>
-              </ol>
               
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  Supported Column Names:
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-blue-800 dark:text-blue-200">
-                  <div>• part_number or "Part Number"</div>
-                  <div>• description or "Description"</div>
-                  <div>• vendor or "Vendor"</div>
-                  <div>• cost or "Cost"</div>
-                  <div>• price or "Price"</div>
-                  <div>• quantity_on_hand or "Qty On Hand"</div>
-                  <div>• quantity_available or "Qty Available"</div>
-                  <div>• location or "Location"</div>
-                </div>
-              </div>
+              {importFormat === 'shopware' ? (
+                <>
+                  <ol className="list-decimal ml-5 space-y-2 text-sm text-muted-foreground">
+                    <li>Export parts inventory from ShopWare as CSV format</li>
+                    <li>Ensure CSV includes at minimum: part_number, description, price</li>
+                    <li>Upload the CSV file using the form above</li>
+                    <li>Import will update existing parts or add new ones (UPSERT)</li>
+                    <li>Run this daily to keep inventory synchronized</li>
+                  </ol>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                      Supported Column Names:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-blue-800 dark:text-blue-200">
+                      <div>• Number or "Part Number"</div>
+                      <div>• Description</div>
+                      <div>• Primary Vendor or Manufacturer</div>
+                      <div>• Cost</div>
+                      <div>• MSRP or Price</div>
+                      <div>• Quantity On Hand</div>
+                      <div>• Min Stock (reorder point)</div>
+                      <div>• Location</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <ol className="list-decimal ml-5 space-y-2 text-sm text-muted-foreground">
+                    <li>Export current inventory using "Export" button in Parts Manager</li>
+                    <li>Edit the CSV in Excel/Google Sheets (e.g., add approvals, update prices)</li>
+                    <li>Save your changes to the CSV file</li>
+                    <li>Upload the modified CSV here</li>
+                    <li>Import will update ALL fields based on ID or part_number</li>
+                  </ol>
+                  
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
+                      Editable Fields:
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 text-xs text-green-800 dark:text-green-200">
+                      <div>• part_number</div>
+                      <div>• description</div>
+                      <div>• vendor</div>
+                      <div>• cost</div>
+                      <div>• price</div>
+                      <div>• quantity_on_hand</div>
+                      <div>• quantity_available</div>
+                      <div>• reorder_point</div>
+                      <div>• location</div>
+                      <div>• bin_location</div>
+                      <div>• category</div>
+                      <div>• <strong>approvals</strong></div>
+                      <div>• notes</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      <strong>Note:</strong> Do NOT edit id, shopware_id, last_synced_at, last_updated, or created_at columns.
+                      These are managed automatically.
+                    </p>
+                  </div>
+                </>
+              )}
             </Card>
           </div>
         </main>
