@@ -3,8 +3,8 @@
 /**
  * Authentication Context Provider
  * 
- * Provides authentication state and methods throughout the app.
- * Handles login, logout, token persistence, and permission checks.
+ * AUTHENTICATION DISABLED FOR V0.DEV
+ * To re-enable: uncomment the auth logic sections below
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
@@ -93,8 +93,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Check for existing session on mount
+  // AUTHENTICATION DISABLED - Set mock user on mount
   useEffect(() => {
+    // Always set mock user for v0.dev
+    setUser({
+      id: 1,
+      email: 'demo@roengine.com',
+      name: 'Demo User'
+    })
+    setRoles([{ id: 1, name: 'Admin', description: 'Full access' }])
+    setPermissions(['*']) // All permissions
+    setIsLoading(false)
+    
+    /* TO RE-ENABLE AUTH, UNCOMMENT THIS:
     const checkAuth = async () => {
       const token = localStorage.getItem('auth_token')
       
@@ -106,14 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     checkAuth()
+    */
   }, [fetchUser])
 
-  // Redirect to login if not authenticated (except for public routes)
+  // AUTHENTICATION REDIRECT DISABLED
+  /* TO RE-ENABLE AUTH REDIRECT, UNCOMMENT THIS:
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !PUBLIC_ROUTES.includes(pathname)) {
       router.push('/login')
     }
   }, [isLoading, isAuthenticated, pathname, router])
+  */
 
   // Login function
   async function login(email: string, password: string) {
@@ -157,17 +171,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check if user has a specific permission
   function hasPermission(key: string): boolean {
-    return permissions.includes(key)
+    return permissions.includes(key) || permissions.includes('*')
   }
 
   // Check if user has any of the specified permissions
   function hasAnyPermission(keys: string[]): boolean {
-    return keys.some(key => permissions.includes(key))
+    return permissions.includes('*') || keys.some(key => permissions.includes(key))
   }
 
   // Check if user has all of the specified permissions
   function hasAllPermissions(keys: string[]): boolean {
-    return keys.every(key => permissions.includes(key))
+    return permissions.includes('*') || keys.every(key => permissions.includes(key))
   }
 
   // Check if user has a specific role
